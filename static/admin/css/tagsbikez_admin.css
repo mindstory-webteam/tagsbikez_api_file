@@ -1,0 +1,46 @@
+/* ── Dashboard Title → Red ──────────────── */
+.content-wrapper h1,
+#content h1 {
+    color: #fff !important;
+}
+
+h3.mb-0 {
+    color: red !important;
+}
+
+ol.breadcrumb {
+       background-color: red !important;
+}
+
+/* ── Green links → Red (model names) ───── */
+.nav-link,
+.nav-sidebar .nav-link,
+table a,
+#content-main a {
+    color: #fff !important;
+}
+
+/* ── Add button (green → red) ───────────── */
+.btn-success,
+a.addlink {
+    background-color: black !important;
+    border-color: red !important;
+    color: white !important;
+}
+
+/* ── Change button (teal → red) ──────────── */
+a.changelink {
+    color: red !important;
+    border-color: red !important;
+}
+
+/* ── Hover states ────────────────────────── */
+.btn-success:hover,
+a.addlink:hover {
+    background-color: darkred !important;
+    border-color: darkred !important;
+}
+
+a.changelink:hover {
+    color: darkred !important;
+}
