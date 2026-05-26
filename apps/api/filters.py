@@ -16,10 +16,11 @@ from apps.motorcycles.models import (
 from apps.home.models import MainBanner
 from apps.events.models import Event
 from apps.gallery.models import GalleryImage
+from apps.careers.models import CareerDepartment, CareerRole
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HOME — MAIN BANNER
+# HOME
 # ─────────────────────────────────────────────────────────────────────────────
 
 class MainBannerFilter(django_filters.FilterSet):
@@ -83,10 +84,6 @@ class ProductCategoryFilter(django_filters.FilterSet):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class MotorcycleProductFilter(django_filters.FilterSet):
-    """
-    ?category=street   → filter by category slug
-    ?is_active=true    → active only
-    """
     category  = django_filters.CharFilter(field_name='category__slug', lookup_expr='exact')
     is_active = django_filters.BooleanFilter(field_name='is_active')
 
@@ -117,3 +114,16 @@ class ProductFeatureSectionFilter(django_filters.FilterSet):
     class Meta:
         model  = ProductFeatureSection
         fields = ['motorcycle']
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CAREERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+class CareerDepartmentFilter(django_filters.FilterSet):
+    is_active = django_filters.BooleanFilter(field_name='is_active')
+    name      = django_filters.CharFilter(field_name='name', lookup_expr='icontains')
+
+    class Meta:
+        model  = CareerDepartment
+        fields = ['is_active', 'name']

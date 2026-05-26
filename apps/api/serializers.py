@@ -1,7 +1,7 @@
 """
 apps/api/serializers.py
 All DRF serializers for TagsBikez.
-Sections: Home | Events | Gallery | Categories | Motorcycles
+Sections: Home | Events | Gallery | Categories | Motorcycles | Careers
 """
 
 from rest_framework import serializers
@@ -15,10 +15,11 @@ from apps.motorcycles.models import (
 from apps.home.models import MainBanner
 from apps.events.models import Event
 from apps.gallery.models import GalleryImage
+from apps.careers.models import CareerDepartment, CareerRole
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HELPER MIXIN — builds absolute media URLs using the request context
+# HELPER MIXIN
 # ─────────────────────────────────────────────────────────────────────────────
 
 class AbsoluteURLMixin:
@@ -42,26 +43,15 @@ class MainBannerSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
     class Meta:
         model  = MainBanner
         fields = [
-            'id',
-            'image_url',
-            'mobile_image_url',   # null-safe: falls back to image_url if no mobile image
-            'title',
-            'subtitle',
-            'cta_label',
-            'cta_url',
-            'display_order',
-            'is_active',
+            'id', 'image_url', 'mobile_image_url',
+            'title', 'subtitle', 'cta_label', 'cta_url',
+            'display_order', 'is_active',
         ]
 
     def get_image_url(self, obj):
         return self._abs(obj.image)
 
     def get_mobile_image_url(self, obj):
-        """
-        Returns the mobile image URL if uploaded,
-        otherwise falls back to the desktop image so the
-        front-end can always use mobile_image_url on small screens.
-        """
         if obj.mobile_image:
             return self._abs(obj.mobile_image)
         return self._abs(obj.image)
@@ -212,3 +202,39 @@ class MotorcycleProductDetailSerializer(AbsoluteURLMixin, serializers.ModelSeria
 
     def get_brochure_url(self, obj):
         return self._abs(obj.brochure_file)
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CAREERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+class CareerRoleSerializer(serializers.ModelSerializer):
+    whatsapp_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = CareerRole
+        fields = [
+            'id',
+            'title',
+            'whatsapp_url',     # ready-to-use wa.me link for APPLY NOW button
+            'display_order',
+            'is_active',
+        ]
+
+    def get_whatsapp_url(self, obj):
+        return obj.get_whatsapp_url()
+
+
+class CareerDepartmentSerializer(serializers.ModelSerializer):
+    roles = CareerRoleSerializer(many=True, read_only=True)
+
+    class Meta:
+        model  = CareerDepartment
+        fields = [
+            'id',
+            'name',
+            'icon',
+            'display_order',
+            'is_active',
+            'roles',            # all roles nested inside department
+        ]

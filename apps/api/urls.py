@@ -1,9 +1,6 @@
 """
 apps/api/urls.py
-
 Central URL conf for the TagsBikez REST API.
-Include in project urls.py:
-    path('api/', include('apps.api.urls')),
 """
 
 from django.urls import path
@@ -16,26 +13,25 @@ from .views import (
     ProductCategoryDetailView,
     MotorcycleProductListView,
     MotorcycleProductDetailView,
+    CareerDepartmentListView,
 )
 
 app_name = 'api'
 
 urlpatterns = [
-    # ── Banners ──────────────────────────────────────────────────────────────
+    # Banners
     path('banners/',                    MainBannerListView.as_view(),          name='banner-list'),
-
-    # ── Events ───────────────────────────────────────────────────────────────
+    # Events
     path('events/',                     EventListView.as_view(),               name='event-list'),
     path('events/upcoming/',            UpcomingEventListView.as_view(),       name='event-upcoming'),
-
-    # ── Gallery ──────────────────────────────────────────────────────────────
+    # Gallery
     path('gallery/',                    GalleryImageListView.as_view(),        name='gallery-list'),
-
-    # ── Categories ───────────────────────────────────────────────────────────
+    # Categories
     path('categories/',                 ProductCategoryListView.as_view(),     name='category-list'),
     path('categories/<slug:slug>/',     ProductCategoryDetailView.as_view(),   name='category-detail'),
-
-    # ── Motorcycles (colors nested inside — no /colors/ route) ───────────────
+    # Motorcycles
     path('motorcycles/',                MotorcycleProductListView.as_view(),   name='motorcycle-list'),
     path('motorcycles/<slug:slug>/',    MotorcycleProductDetailView.as_view(), name='motorcycle-detail'),
+    # Careers
+    path('careers/',                    CareerDepartmentListView.as_view(),    name='career-list'),
 ]

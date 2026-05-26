@@ -1,7 +1,7 @@
 """
 apps/api/views.py
 
-All API views for TagsBikez — filters wired on every endpoint.
+All API views for TagsBikez.
 
 Endpoints:
   GET  /api/banners/                → MainBannerListView
@@ -12,32 +12,7 @@ Endpoints:
   GET  /api/categories/<slug>/      → ProductCategoryDetailView
   GET  /api/motorcycles/            → MotorcycleProductListView
   GET  /api/motorcycles/<slug>/     → MotorcycleProductDetailView
-
-Query-param filters available per endpoint
-──────────────────────────────────────────
-  /api/banners/
-      ?is_active=true
-
-  /api/events/
-      ?is_active=true
-      ?destination=kochi          (case-insensitive contains)
-      ?starting_point=thrissur    (case-insensitive contains)
-      ?start_date=2025-01-01      (events starting on or after)
-      ?end_date=2025-12-31        (events ending on or before)
-      ?upcoming=true              (end_date >= today)
-
-  /api/gallery/
-      ?is_active=true
-
-  /api/categories/
-      ?is_active=true
-      ?name=street                (case-insensitive contains)
-
-  /api/motorcycles/
-      ?category=street            (exact category slug)
-      ?is_active=true
-
-NO /api/colors/ — colors are nested inside /api/motorcycles/<slug>/
+  GET  /api/careers/                → CareerDepartmentListView
 """
 
 from django.utils import timezone
@@ -52,6 +27,7 @@ from apps.events.models import Event
 from apps.gallery.models import GalleryImage
 from apps.categories.models import ProductCategory
 from apps.motorcycles.models import MotorcycleProduct
+from apps.careers.models import CareerDepartment
 
 from .serializers import (
     MainBannerSerializer,
@@ -61,6 +37,7 @@ from .serializers import (
     ProductCategoryDetailSerializer,
     MotorcycleProductListSerializer,
     MotorcycleProductDetailSerializer,
+    CareerDepartmentSerializer,
 )
 from .filters import (
     MainBannerFilter,
@@ -68,6 +45,7 @@ from .filters import (
     GalleryImageFilter,
     ProductCategoryFilter,
     MotorcycleProductFilter,
+    CareerDepartmentFilter,
 )
 
 
@@ -76,21 +54,14 @@ from .filters import (
 # ─────────────────────────────────────────────────────────────────────────────
 
 class MainBannerListView(ListAPIView):
-    """
-    GET /api/banners/
-    Query params: ?is_active=true
-    """
+    """GET /api/banners/  — ?is_active=true"""
     serializer_class   = MainBannerSerializer
     permission_classes = [AllowAny]
     filter_backends    = [DjangoFilterBackend]
     filterset_class    = MainBannerFilter
 
     def get_queryset(self):
-        return (
-            MainBanner.objects
-            .filter(is_active=True)
-            .order_by('display_order')
-        )
+        return MainBanner.objects.filter(is_active=True).order_by('display_order')
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -98,28 +69,18 @@ class MainBannerListView(ListAPIView):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class EventListView(ListAPIView):
-    """
-    GET /api/events/
-    Query params: ?is_active ?destination ?starting_point ?start_date ?end_date ?upcoming
-    """
+    """GET /api/events/  — ?is_active ?destination ?starting_point ?start_date ?end_date ?upcoming"""
     serializer_class   = EventSerializer
     permission_classes = [AllowAny]
     filter_backends    = [DjangoFilterBackend]
     filterset_class    = EventFilter
 
     def get_queryset(self):
-        return (
-            Event.objects
-            .filter(is_active=True)
-            .order_by('display_order', 'start_date')
-        )
+        return Event.objects.filter(is_active=True).order_by('display_order', 'start_date')
 
 
 class UpcomingEventListView(ListAPIView):
-    """
-    GET /api/events/upcoming/
-    Hardcoded to end_date >= today. Also accepts all EventFilter params.
-    """
+    """GET /api/events/upcoming/  — end_date >= today"""
     serializer_class   = EventSerializer
     permission_classes = [AllowAny]
     filter_backends    = [DjangoFilterBackend]
@@ -139,21 +100,14 @@ class UpcomingEventListView(ListAPIView):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class GalleryImageListView(ListAPIView):
-    """
-    GET /api/gallery/
-    Query params: ?is_active=true
-    """
+    """GET /api/gallery/  — ?is_active=true"""
     serializer_class   = GalleryImageSerializer
     permission_classes = [AllowAny]
     filter_backends    = [DjangoFilterBackend]
     filterset_class    = GalleryImageFilter
 
     def get_queryset(self):
-        return (
-            GalleryImage.objects
-            .filter(is_active=True)
-            .order_by('display_order')
-        )
+        return GalleryImage.objects.filter(is_active=True).order_by('display_order')
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -161,28 +115,18 @@ class GalleryImageListView(ListAPIView):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ProductCategoryListView(ListAPIView):
-    """
-    GET /api/categories/
-    Query params: ?is_active=true  ?name=street
-    """
+    """GET /api/categories/  — ?is_active=true ?name=street"""
     serializer_class   = ProductCategoryListSerializer
     permission_classes = [AllowAny]
     filter_backends    = [DjangoFilterBackend]
     filterset_class    = ProductCategoryFilter
 
     def get_queryset(self):
-        return (
-            ProductCategory.objects
-            .filter(is_active=True)
-            .order_by('display_order', 'name')
-        )
+        return ProductCategory.objects.filter(is_active=True).order_by('display_order', 'name')
 
 
 class ProductCategoryDetailView(RetrieveAPIView):
-    """
-    GET /api/categories/<slug>/
-    No filters needed on single-object detail.
-    """
+    """GET /api/categories/<slug>/"""
     serializer_class   = ProductCategoryDetailSerializer
     permission_classes = [AllowAny]
     lookup_field       = 'slug'
@@ -192,15 +136,10 @@ class ProductCategoryDetailView(RetrieveAPIView):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MOTORCYCLES — colors nested, no /api/colors/ endpoint
+# MOTORCYCLES
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _motorcycle_qs():
-    """
-    Shared optimised queryset.
-      select_related   → category, top_about   (no extra JOIN queries)
-      prefetch_related → colors, features      (2 bulk queries, no N+1)
-    """
     return (
         MotorcycleProduct.objects
         .filter(is_active=True)
@@ -211,13 +150,7 @@ def _motorcycle_qs():
 
 
 class MotorcycleProductListView(ListAPIView):
-    """
-    GET /api/motorcycles/
-    Query params: ?category=street  ?is_active=true
-
-    base_price = price of lowest display_order color variant.
-    Colors are NOT expanded here — use /api/motorcycles/<slug>/ for full detail.
-    """
+    """GET /api/motorcycles/  — ?category=street ?is_active=true"""
     serializer_class   = MotorcycleProductListSerializer
     permission_classes = [AllowAny]
     filter_backends    = [DjangoFilterBackend]
@@ -228,14 +161,36 @@ class MotorcycleProductListView(ListAPIView):
 
 
 class MotorcycleProductDetailView(RetrieveAPIView):
-    """
-    GET /api/motorcycles/<slug>/
-    Full detail — top_about + colors + features all nested.
-    No filters on detail (lookup by slug).
-    """
+    """GET /api/motorcycles/<slug>/"""
     serializer_class   = MotorcycleProductDetailSerializer
     permission_classes = [AllowAny]
     lookup_field       = 'slug'
 
     def get_queryset(self):
         return _motorcycle_qs()
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CAREERS
+# ─────────────────────────────────────────────────────────────────────────────
+
+class CareerDepartmentListView(ListAPIView):
+    """
+    GET /api/careers/
+    Returns all active departments with roles nested inside.
+    Each role includes whatsapp_url for the APPLY NOW button.
+
+    Query params: ?is_active=true  ?name=sales
+    """
+    serializer_class   = CareerDepartmentSerializer
+    permission_classes = [AllowAny]
+    filter_backends    = [DjangoFilterBackend]
+    filterset_class    = CareerDepartmentFilter
+
+    def get_queryset(self):
+        return (
+            CareerDepartment.objects
+            .filter(is_active=True)
+            .prefetch_related('roles')
+            .order_by('display_order', 'name')
+        )
