@@ -304,50 +304,50 @@ JAZZMIN_SETTINGS = {
     "related_modal_active": True,
 
     # ── UI Tweaks ─────────────────────────────
-    "custom_css": "admin/css/tagsbikez_admin.css",   # ✅ FIXED — correct location
-    "custom_js": None,
-    "use_google_fonts_cdn": True,
-    "show_ui_builder": False,
+    # "custom_css": "admin/css/tagsbikez_admin.css",   # ✅ FIXED — correct location
+    # "custom_js": None,
+    # "use_google_fonts_cdn": True,
+    # "show_ui_builder": False,
 
     # ── Change View ───────────────────────────
     "changeform_format": "horizontal_tabs",
 }
 
-JAZZMIN_UI_TWEAKS = {
-    "navbar_small_text": False,
-    "footer_small_text": False,
-    "body_small_text": False,
-    "brand_small_text": False,
+# JAZZMIN_UI_TWEAKS = {
+#     "navbar_small_text": False,
+#     "footer_small_text": False,
+#     "body_small_text": False,
+#     "brand_small_text": False,
 
-    # Red accent color throughout
-    "accent": "accent-danger",
+#     # Red accent color throughout
+#     "accent": "accent-danger",
 
-    # Top navbar — black background
-    "navbar": "navbar-dark navbar-danger",
-    "no_navbar_border": True,
+#     # Top navbar — BLACK background stays
+#     "navbar": "navbar-dark navbar-danger",
+#     "no_navbar_border": True,
 
-    # Sidebar — black with red active highlight
-    "sidebar": "sidebar-dark-danger",
-    "sidebar_nav_small_text": False,
-    "sidebar_disable_expand": False,
-    "sidebar_nav_child_indent": True,
-    "sidebar_nav_compact_style": False,
-    "sidebar_nav_legacy_style": False,
-    "sidebar_nav_flat_style": False,
+#     # Sidebar — BLACK with red active highlight stays
+#     "sidebar": "sidebar-dark-danger",
+#     "sidebar_nav_small_text": False,
+#     "sidebar_disable_expand": False,
+#     "sidebar_nav_child_indent": True,
+#     "sidebar_nav_compact_style": False,
+#     "sidebar_nav_legacy_style": False,
+#     "sidebar_nav_flat_style": False,
 
-    # Dark base theme
-    "theme": "darkly",
+#     # ✅ CHANGED: light theme so content area is white
+#     "theme": "flatly",          # was "darkly" — this was forcing dark bg on all inputs
 
-    # Sticky action buttons at top
-    "actions_sticky_top": True,
+#     # Sticky action buttons at top
+#     "actions_sticky_top": True,
 
-    # All primary buttons → red
-    "button_classes": {
-        "primary":   "btn-danger",
-        "secondary": "btn-outline-light",
-        "info":      "btn-outline-info",
-        "warning":   "btn-warning",
-        "danger":    "btn-danger",
-        "success":   "btn-success",
-    },
-}
+#     # All primary buttons → red
+#     "button_classes": {
+#         "primary":   "btn-danger",
+#         "secondary": "btn-outline-secondary",
+#         "info":      "btn-outline-info",
+#         "warning":   "btn-warning",
+#         "danger":    "btn-danger",
+#         "success":   "btn-success",
+#     },
+# }

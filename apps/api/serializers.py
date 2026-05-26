@@ -116,7 +116,7 @@ class ProductCategoryDetailSerializer(serializers.ModelSerializer):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MOTORCYCLES
+# MOTORCYCLES — nested serializers
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ProductColorSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
@@ -152,33 +152,30 @@ class ProductFeatureSectionSerializer(AbsoluteURLMixin, serializers.ModelSeriali
         return self._abs(obj.image)
 
 
-class MotorcycleProductListSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
-    category_name      = serializers.CharField(source='category.name', read_only=True)
-    category_slug      = serializers.CharField(source='category.slug', read_only=True)
-    featured_image_url = serializers.SerializerMethodField()
-    base_price         = serializers.SerializerMethodField()
+# ─── Single full serializer used for BOTH list and detail ────────────────────
 
-    class Meta:
-        model  = MotorcycleProduct
-        fields = [
-            'id', 'name', 'slug', 'short_description',
-            'featured_image_url', 'engine_cc', 'power', 'torque',
-            'base_price', 'category_name', 'category_slug',
-            'display_order', 'is_active', 'created_at',
-        ]
+class MotorcycleProductSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
+    """
+    One serializer for all fields — used on both:
+      GET /api/motorcycles/          (list)
+      GET /api/motorcycles/<slug>/   (detail)
 
-    def get_featured_image_url(self, obj):
-        return self._abs(obj.featured_image)
-
-    def get_base_price(self, obj):
-        first = obj.colors.order_by('display_order').first()
-        return first.price if first else None
-
-
-class MotorcycleProductDetailSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
+    All fields included:
+      Core        → id, name, slug, short_description, description
+      Images      → featured_image_url
+      Specs       → engine_cc, power, torque
+      Brochure    → brochure_url
+      Category    → id, name, slug (nested)
+      base_price  → price of lowest display_order color
+      top_about   → hero section (nested)
+      colors      → all color variants (nested)
+      features    → all story sections (nested)
+      Meta        → display_order, is_active, created_at, updated_at
+    """
     category           = ProductCategoryListSerializer(read_only=True)
     featured_image_url = serializers.SerializerMethodField()
     brochure_url       = serializers.SerializerMethodField()
+    base_price         = serializers.SerializerMethodField()
     top_about          = ProductTopAboutSerializer(read_only=True)
     colors             = ProductColorSerializer(many=True, read_only=True)
     features           = ProductFeatureSectionSerializer(many=True, read_only=True)
@@ -186,15 +183,33 @@ class MotorcycleProductDetailSerializer(AbsoluteURLMixin, serializers.ModelSeria
     class Meta:
         model  = MotorcycleProduct
         fields = [
+            # ── Hero section ──────────────────────────
             'top_about',
-            'id', 'name', 'slug', 'featured_image_url',
-            'short_description', 'description',
+            # ── Core ──────────────────────────────────
+            'id',
+            'name',
+            'slug',
+            'featured_image_url',
+            'short_description',
+            'description',
+            # ── Colors (nested, no separate endpoint) ─
             'colors',
-            'engine_cc', 'power', 'torque',
+            'base_price',
+            # ── Specs ─────────────────────────────────
+            'engine_cc',
+            'power',
+            'torque',
+            # ── Brochure ──────────────────────────────
             'brochure_url',
+            # ── Category ──────────────────────────────
             'category',
+            # ── Bottom feature sections ───────────────
             'features',
-            'display_order', 'is_active', 'created_at',
+            # ── Meta ──────────────────────────────────
+            'display_order',
+            'is_active',
+            'created_at',
+            'updated_at',
         ]
 
     def get_featured_image_url(self, obj):
@@ -202,6 +217,16 @@ class MotorcycleProductDetailSerializer(AbsoluteURLMixin, serializers.ModelSeria
 
     def get_brochure_url(self, obj):
         return self._abs(obj.brochure_file)
+
+    def get_base_price(self, obj):
+        # prefetch_related('colors') is set in the view — no extra DB hit
+        first = obj.colors.order_by('display_order').first()
+        return first.price if first else None
+
+
+# Keep aliases so views.py import names stay the same
+MotorcycleProductListSerializer   = MotorcycleProductSerializer
+MotorcycleProductDetailSerializer = MotorcycleProductSerializer
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -213,13 +238,7 @@ class CareerRoleSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = CareerRole
-        fields = [
-            'id',
-            'title',
-            'whatsapp_url',     # ready-to-use wa.me link for APPLY NOW button
-            'display_order',
-            'is_active',
-        ]
+        fields = ['id', 'title', 'whatsapp_url', 'display_order', 'is_active']
 
     def get_whatsapp_url(self, obj):
         return obj.get_whatsapp_url()
@@ -230,11 +249,4 @@ class CareerDepartmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model  = CareerDepartment
-        fields = [
-            'id',
-            'name',
-            'icon',
-            'display_order',
-            'is_active',
-            'roles',            # all roles nested inside department
-        ]
+        fields = ['id', 'name', 'icon', 'display_order', 'is_active', 'roles']

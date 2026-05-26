@@ -8,9 +8,9 @@ from .models import CareerDepartment, CareerRole
 
 
 class CareerRoleInline(admin.TabularInline):
-    model   = CareerRole
-    extra   = 1
-    fields  = ('display_order', 'title', 'whatsapp_number', 'whatsapp_message', 'is_active', 'whatsapp_preview')
+    model           = CareerRole
+    extra           = 1
+    fields          = ('display_order', 'title', 'whatsapp_number', 'whatsapp_message', 'is_active', 'whatsapp_preview')
     readonly_fields = ('whatsapp_preview',)
 
     @admin.display(description='WhatsApp Link Preview')
@@ -28,7 +28,7 @@ class CareerRoleInline(admin.TabularInline):
 class CareerDepartmentAdmin(admin.ModelAdmin):
     list_display  = ['name', 'icon', 'role_count', 'display_order', 'is_active']
     list_editable = ['display_order', 'is_active']
-    search_fields = ['name']
+    search_fields = ['name']   # required for autocomplete_fields to work
     inlines       = [CareerRoleInline]
 
     @admin.display(description='Roles')
@@ -39,11 +39,11 @@ class CareerDepartmentAdmin(admin.ModelAdmin):
 
 @admin.register(CareerRole)
 class CareerRoleAdmin(admin.ModelAdmin):
-    list_display   = ['title', 'department', 'whatsapp_number', 'whatsapp_link', 'display_order', 'is_active']
-    list_editable  = ['display_order', 'is_active']
-    list_filter    = ['department', 'is_active']
-    search_fields  = ['title', 'department__name']
-    raw_id_fields  = ['department']
+    list_display        = ['title', 'department', 'whatsapp_number', 'whatsapp_link', 'display_order', 'is_active']
+    list_editable       = ['display_order', 'is_active']
+    list_filter         = ['department', 'is_active']
+    search_fields       = ['title', 'department__name']
+    autocomplete_fields = ['department']   # ← fix: shows searchable dropdown instead of raw id
 
     @admin.display(description='WhatsApp')
     def whatsapp_link(self, obj):
