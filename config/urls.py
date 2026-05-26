@@ -19,6 +19,7 @@ def api_root(request):
         'gallery':     request.build_absolute_uri('/api/gallery/'),
         'categories':  request.build_absolute_uri('/api/categories/'),
         'motorcycles': request.build_absolute_uri('/api/motorcycles/'),
+        'career': request.build_absolute_uri('/api/careers/'),
     })
 
 
