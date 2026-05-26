@@ -1,14 +1,5 @@
 """
 apps/motorcycles/admin.py
-
-Admin registrations for MotorcycleProduct and its related models.
-
-Layout mirrors the Product Model Page spec:
-  ┌─ MotorcycleProductAdmin ──────────────────────────┐
-  │  ProductTopAboutInline      (top hero section)    │
-  │  ProductColorInline         (color variants)      │
-  │  ProductFeatureSectionInline (bottom stories)     │
-  └───────────────────────────────────────────────────┘
 """
 
 from django.contrib import admin
@@ -21,15 +12,7 @@ from .models import (
 )
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# INLINES
-# ─────────────────────────────────────────────────────────────────────────────
-
 class ProductTopAboutInline(admin.StackedInline):
-    """
-    TOP ABOUT SECTION — Image / Heading / Description
-    One per motorcycle, so StackedInline with max_num=1.
-    """
     model   = ProductTopAbout
     extra   = 0
     max_num = 1
@@ -39,12 +22,9 @@ class ProductTopAboutInline(admin.StackedInline):
 
 
 class ProductColorInline(admin.TabularInline):
-    """
-    COLOR VARIANTS — name / hex swatch / image / price
-    """
-    model  = ProductColor
-    extra  = 1
-    fields = ('display_order', 'name', 'hex', 'color_swatch', 'image', 'price')
+    model           = ProductColor
+    extra           = 1
+    fields          = ('display_order', 'name', 'hex', 'color_swatch', 'image', 'price')
     readonly_fields = ('color_swatch',)
 
     @admin.display(description='Swatch')
@@ -53,69 +33,42 @@ class ProductColorInline(admin.TabularInline):
             return format_html(
                 '<span style="display:inline-block;width:24px;height:24px;'
                 'border-radius:4px;background:{};border:1px solid #ccc;"></span>',
-                obj.hex
+                obj.hex,
             )
         return '—'
 
 
 class ProductFeatureSectionInline(admin.TabularInline):
-    """
-    BOTTOM FEATURE SECTIONS — Image / Title / Description
-    """
-    model  = ProductFeatureSection
-    extra  = 1
-    fields = ('display_order', 'title', 'description', 'image')
+    model               = ProductFeatureSection
+    extra               = 1
+    fields              = ('display_order', 'title', 'description', 'image')
     verbose_name        = 'Feature / Story Section'
     verbose_name_plural = 'Bottom Feature Sections (Image · Title · Description)'
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# MAIN ADMIN
-# ─────────────────────────────────────────────────────────────────────────────
-
 @admin.register(MotorcycleProduct)
 class MotorcycleProductAdmin(admin.ModelAdmin):
-    list_display = [
-        'name', 'category', 'engine_cc', 'power', 'torque',
-        'color_count', 'display_order', 'is_active',
-    ]
-    list_editable  = ['display_order', 'is_active']
-    list_filter    = ['category', 'is_active']
-    search_fields  = ['name', 'slug', 'short_description']
+    list_display        = ['name', 'category', 'engine_cc', 'power', 'torque', 'color_count', 'display_order', 'is_active']
+    list_editable       = ['display_order', 'is_active']
+    list_filter         = ['category', 'is_active']
+    search_fields       = ['name', 'slug', 'short_description']
     prepopulated_fields = {'slug': ('name',)}
     autocomplete_fields = ['category']
 
     fieldsets = (
-        ('Basic Info', {
-            'fields': ('category', 'name', 'slug', 'featured_image',
-                       'short_description', 'description'),
-        }),
-        ('Specifications', {
-            'fields': ('engine_cc', 'power', 'torque'),
-        }),
-        ('Brochure', {
-            'fields': ('brochure_file',),
-        }),
-        ('Visibility', {
-            'fields': ('display_order', 'is_active'),
-        }),
+        ('Basic Info',     {'fields': ('category', 'name', 'slug', 'featured_image', 'short_description', 'description')}),
+        ('Specifications', {'fields': ('engine_cc', 'power', 'torque')}),
+        ('Brochure',       {'fields': ('brochure_file',)}),
+        ('Visibility',     {'fields': ('display_order', 'is_active')}),
     )
 
-    inlines = [
-        ProductTopAboutInline,       # Top: Image / Heading / Description
-        ProductColorInline,          # Detail: Color variants with price
-        ProductFeatureSectionInline, # Bottom: Image / Title / Description
-    ]
+    inlines = [ProductTopAboutInline, ProductColorInline, ProductFeatureSectionInline]
 
     @admin.display(description='Colors')
     def color_count(self, obj):
         count = obj.colors.count()
         return f"{count} color{'s' if count != 1 else ''}"
 
-
-# ─────────────────────────────────────────────────────────────────────────────
-# STANDALONE ADMINS (for quick access / bulk editing)
-# ─────────────────────────────────────────────────────────────────────────────
 
 @admin.register(ProductColor)
 class ProductColorAdmin(admin.ModelAdmin):
@@ -131,7 +84,7 @@ class ProductColorAdmin(admin.ModelAdmin):
             return format_html(
                 '<span style="display:inline-block;width:24px;height:24px;'
                 'border-radius:4px;background:{};border:1px solid #ccc;"></span>',
-                obj.hex
+                obj.hex,
             )
         return '—'
 

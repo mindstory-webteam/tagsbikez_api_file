@@ -31,8 +31,8 @@ class Event(models.Model):
     created_at     = models.DateTimeField(auto_now_add=True)
 
     class Meta:
-        ordering = ['start_date', 'display_order']
-        verbose_name = 'Event'
+        ordering            = ['start_date', 'display_order']
+        verbose_name        = 'Event'
         verbose_name_plural = 'Events'
 
     def __str__(self):
@@ -40,4 +40,5 @@ class Event(models.Model):
 
     @property
     def is_upcoming(self):
+        """True if the event ends today or in the future."""
         return self.end_date >= timezone.now().date()

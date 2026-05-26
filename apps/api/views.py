@@ -1,26 +1,57 @@
 """
 apps/api/views.py
-All DRF ViewSets.
-About section removed. Home / Events / Gallery added.
+
+All API views for TagsBikez — filters wired on every endpoint.
+
+Endpoints:
+  GET  /api/banners/                → MainBannerListView
+  GET  /api/events/                 → EventListView
+  GET  /api/events/upcoming/        → UpcomingEventListView
+  GET  /api/gallery/                → GalleryImageListView
+  GET  /api/categories/             → ProductCategoryListView
+  GET  /api/categories/<slug>/      → ProductCategoryDetailView
+  GET  /api/motorcycles/            → MotorcycleProductListView
+  GET  /api/motorcycles/<slug>/     → MotorcycleProductDetailView
+
+Query-param filters available per endpoint
+──────────────────────────────────────────
+  /api/banners/
+      ?is_active=true
+
+  /api/events/
+      ?is_active=true
+      ?destination=kochi          (case-insensitive contains)
+      ?starting_point=thrissur    (case-insensitive contains)
+      ?start_date=2025-01-01      (events starting on or after)
+      ?end_date=2025-12-31        (events ending on or before)
+      ?upcoming=true              (end_date >= today)
+
+  /api/gallery/
+      ?is_active=true
+
+  /api/categories/
+      ?is_active=true
+      ?name=street                (case-insensitive contains)
+
+  /api/motorcycles/
+      ?category=street            (exact category slug)
+      ?is_active=true
+
+NO /api/colors/ — colors are nested inside /api/motorcycles/<slug>/
 """
 
-"""
-apps/api/views.py
-"""
+from django.utils import timezone
 
-from rest_framework import viewsets, filters
+from rest_framework.generics import ListAPIView, RetrieveAPIView
+from rest_framework.permissions import AllowAny
+
 from django_filters.rest_framework import DjangoFilterBackend
 
-from apps.categories.models import ProductCategory
-from apps.motorcycles.models import (
-    MotorcycleProduct,
-    ProductColor,
-    ProductTopAbout,
-    ProductFeatureSection,
-)
 from apps.home.models import MainBanner
 from apps.events.models import Event
 from apps.gallery.models import GalleryImage
+from apps.categories.models import ProductCategory
+from apps.motorcycles.models import MotorcycleProduct
 
 from .serializers import (
     MainBannerSerializer,
@@ -30,9 +61,6 @@ from .serializers import (
     ProductCategoryDetailSerializer,
     MotorcycleProductListSerializer,
     MotorcycleProductDetailSerializer,
-    ProductColorSerializer,
-    ProductTopAboutSerializer,
-    ProductFeatureSectionSerializer,
 )
 from .filters import (
     MainBannerFilter,
@@ -40,114 +68,174 @@ from .filters import (
     GalleryImageFilter,
     ProductCategoryFilter,
     MotorcycleProductFilter,
-    ProductColorFilter,
-    ProductTopAboutFilter,
-    ProductFeatureSectionFilter,
 )
-from .pagination import StandardResultsPagination
 
 
-class MainBannerViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = MainBannerSerializer
-    filter_backends  = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class  = MainBannerFilter
-    ordering_fields  = ['display_order']
-    ordering         = ['display_order']
-    pagination_class = StandardResultsPagination
+# ─────────────────────────────────────────────────────────────────────────────
+# HOME — MAIN BANNER
+# ─────────────────────────────────────────────────────────────────────────────
 
-    def get_queryset(self):
-        return MainBanner.objects.filter(is_active=True)
-
-
-class EventViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = EventSerializer
-    filter_backends  = [DjangoFilterBackend, filters.OrderingFilter, filters.SearchFilter]
-    filterset_class  = EventFilter
-    ordering_fields  = ['start_date', 'display_order']
-    ordering         = ['start_date']
-    search_fields    = ['title', 'starting_point', 'destination']
-    pagination_class = StandardResultsPagination
+class MainBannerListView(ListAPIView):
+    """
+    GET /api/banners/
+    Query params: ?is_active=true
+    """
+    serializer_class   = MainBannerSerializer
+    permission_classes = [AllowAny]
+    filter_backends    = [DjangoFilterBackend]
+    filterset_class    = MainBannerFilter
 
     def get_queryset(self):
-        return Event.objects.filter(is_active=True)
+        return (
+            MainBanner.objects
+            .filter(is_active=True)
+            .order_by('display_order')
+        )
 
 
-class GalleryImageViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = GalleryImageSerializer
-    filter_backends  = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class  = GalleryImageFilter
-    ordering_fields  = ['display_order', 'uploaded_at']
-    ordering         = ['display_order']
-    pagination_class = StandardResultsPagination
+# ─────────────────────────────────────────────────────────────────────────────
+# EVENTS
+# ─────────────────────────────────────────────────────────────────────────────
+
+class EventListView(ListAPIView):
+    """
+    GET /api/events/
+    Query params: ?is_active ?destination ?starting_point ?start_date ?end_date ?upcoming
+    """
+    serializer_class   = EventSerializer
+    permission_classes = [AllowAny]
+    filter_backends    = [DjangoFilterBackend]
+    filterset_class    = EventFilter
 
     def get_queryset(self):
-        return GalleryImage.objects.filter(is_active=True)
+        return (
+            Event.objects
+            .filter(is_active=True)
+            .order_by('display_order', 'start_date')
+        )
 
 
-class ProductCategoryViewSet(viewsets.ReadOnlyModelViewSet):
-    lookup_field     = 'slug'
-    serializer_class = ProductCategoryListSerializer
-    filter_backends  = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class  = ProductCategoryFilter
-    ordering_fields  = ['display_order', 'name']
-    ordering         = ['display_order']
-    pagination_class = StandardResultsPagination
+class UpcomingEventListView(ListAPIView):
+    """
+    GET /api/events/upcoming/
+    Hardcoded to end_date >= today. Also accepts all EventFilter params.
+    """
+    serializer_class   = EventSerializer
+    permission_classes = [AllowAny]
+    filter_backends    = [DjangoFilterBackend]
+    filterset_class    = EventFilter
+
+    def get_queryset(self):
+        today = timezone.now().date()
+        return (
+            Event.objects
+            .filter(is_active=True, end_date__gte=today)
+            .order_by('display_order', 'start_date')
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GALLERY
+# ─────────────────────────────────────────────────────────────────────────────
+
+class GalleryImageListView(ListAPIView):
+    """
+    GET /api/gallery/
+    Query params: ?is_active=true
+    """
+    serializer_class   = GalleryImageSerializer
+    permission_classes = [AllowAny]
+    filter_backends    = [DjangoFilterBackend]
+    filterset_class    = GalleryImageFilter
+
+    def get_queryset(self):
+        return (
+            GalleryImage.objects
+            .filter(is_active=True)
+            .order_by('display_order')
+        )
+
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CATEGORIES
+# ─────────────────────────────────────────────────────────────────────────────
+
+class ProductCategoryListView(ListAPIView):
+    """
+    GET /api/categories/
+    Query params: ?is_active=true  ?name=street
+    """
+    serializer_class   = ProductCategoryListSerializer
+    permission_classes = [AllowAny]
+    filter_backends    = [DjangoFilterBackend]
+    filterset_class    = ProductCategoryFilter
+
+    def get_queryset(self):
+        return (
+            ProductCategory.objects
+            .filter(is_active=True)
+            .order_by('display_order', 'name')
+        )
+
+
+class ProductCategoryDetailView(RetrieveAPIView):
+    """
+    GET /api/categories/<slug>/
+    No filters needed on single-object detail.
+    """
+    serializer_class   = ProductCategoryDetailSerializer
+    permission_classes = [AllowAny]
+    lookup_field       = 'slug'
 
     def get_queryset(self):
         return ProductCategory.objects.filter(is_active=True)
 
 
-class MotorcycleProductViewSet(viewsets.ReadOnlyModelViewSet):
-    lookup_field     = 'slug'
-    filter_backends  = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class  = MotorcycleProductFilter
-    ordering_fields  = ['display_order', 'name', 'created_at']
-    ordering         = ['display_order']
-    pagination_class = StandardResultsPagination
+# ─────────────────────────────────────────────────────────────────────────────
+# MOTORCYCLES — colors nested, no /api/colors/ endpoint
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _motorcycle_qs():
+    """
+    Shared optimised queryset.
+      select_related   → category, top_about   (no extra JOIN queries)
+      prefetch_related → colors, features      (2 bulk queries, no N+1)
+    """
+    return (
+        MotorcycleProduct.objects
+        .filter(is_active=True)
+        .select_related('category', 'top_about')
+        .prefetch_related('colors', 'features')
+        .order_by('display_order', 'name')
+    )
+
+
+class MotorcycleProductListView(ListAPIView):
+    """
+    GET /api/motorcycles/
+    Query params: ?category=street  ?is_active=true
+
+    base_price = price of lowest display_order color variant.
+    Colors are NOT expanded here — use /api/motorcycles/<slug>/ for full detail.
+    """
+    serializer_class   = MotorcycleProductListSerializer
+    permission_classes = [AllowAny]
+    filter_backends    = [DjangoFilterBackend]
+    filterset_class    = MotorcycleProductFilter
 
     def get_queryset(self):
-        return (
-            MotorcycleProduct.objects
-            .filter(is_active=True)
-            .select_related('category', 'top_about')
-            .prefetch_related('colors', 'features')
-        )
-
-    def get_serializer_class(self):
-        if self.action == 'retrieve':
-            return MotorcycleProductDetailSerializer
-        return MotorcycleProductListSerializer
+        return _motorcycle_qs()
 
 
-class ProductColorViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = ProductColorSerializer
-    filter_backends  = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class  = ProductColorFilter
-    ordering_fields  = ['display_order']
-    ordering         = ['display_order']
-    pagination_class = StandardResultsPagination
+class MotorcycleProductDetailView(RetrieveAPIView):
+    """
+    GET /api/motorcycles/<slug>/
+    Full detail — top_about + colors + features all nested.
+    No filters on detail (lookup by slug).
+    """
+    serializer_class   = MotorcycleProductDetailSerializer
+    permission_classes = [AllowAny]
+    lookup_field       = 'slug'
 
     def get_queryset(self):
-        return ProductColor.objects.select_related('motorcycle').all()
-
-
-class ProductTopAboutViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = ProductTopAboutSerializer
-    filter_backends  = [DjangoFilterBackend]
-    filterset_class  = ProductTopAboutFilter
-    pagination_class = StandardResultsPagination
-
-    def get_queryset(self):
-        return ProductTopAbout.objects.select_related('motorcycle').all()
-
-
-class ProductFeatureSectionViewSet(viewsets.ReadOnlyModelViewSet):
-    serializer_class = ProductFeatureSectionSerializer
-    filter_backends  = [DjangoFilterBackend, filters.OrderingFilter]
-    filterset_class  = ProductFeatureSectionFilter
-    ordering_fields  = ['display_order']
-    ordering         = ['display_order']
-    pagination_class = StandardResultsPagination
-
-    def get_queryset(self):
-        return ProductFeatureSection.objects.select_related('motorcycle').all()
+        return _motorcycle_qs()

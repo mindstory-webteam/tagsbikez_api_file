@@ -18,7 +18,7 @@ from apps.gallery.models import GalleryImage
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# HELPER MIXIN
+# HELPER MIXIN — builds absolute media URLs using the request context
 # ─────────────────────────────────────────────────────────────────────────────
 
 class AbsoluteURLMixin:
@@ -36,16 +36,34 @@ class AbsoluteURLMixin:
 # ─────────────────────────────────────────────────────────────────────────────
 
 class MainBannerSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
-    image_url = serializers.SerializerMethodField()
+    image_url        = serializers.SerializerMethodField()
+    mobile_image_url = serializers.SerializerMethodField()
 
     class Meta:
         model  = MainBanner
         fields = [
-            'id', 'image_url', 'title', 'subtitle',
-            'cta_label', 'cta_url', 'display_order', 'is_active',
+            'id',
+            'image_url',
+            'mobile_image_url',   # null-safe: falls back to image_url if no mobile image
+            'title',
+            'subtitle',
+            'cta_label',
+            'cta_url',
+            'display_order',
+            'is_active',
         ]
 
     def get_image_url(self, obj):
+        return self._abs(obj.image)
+
+    def get_mobile_image_url(self, obj):
+        """
+        Returns the mobile image URL if uploaded,
+        otherwise falls back to the desktop image so the
+        front-end can always use mobile_image_url on small screens.
+        """
+        if obj.mobile_image:
+            return self._abs(obj.mobile_image)
         return self._abs(obj.image)
 
 
@@ -96,14 +114,12 @@ class GalleryImageSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ProductCategoryListSerializer(serializers.ModelSerializer):
-
     class Meta:
         model  = ProductCategory
         fields = ['id', 'name', 'slug', 'display_order', 'is_active']
 
 
 class ProductCategoryDetailSerializer(serializers.ModelSerializer):
-
     class Meta:
         model  = ProductCategory
         fields = ['id', 'name', 'slug', 'display_order', 'is_active']

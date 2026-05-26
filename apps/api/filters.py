@@ -1,14 +1,11 @@
 """
 apps/api/filters.py
-django-filter FilterSet classes.
-"""
-# -------------------------------------------------------------------
-
-"""
-apps/api/filters.py
+django-filter FilterSet classes for all TagsBikez endpoints.
 """
 
 import django_filters
+from django.utils import timezone
+
 from apps.categories.models import ProductCategory
 from apps.motorcycles.models import (
     MotorcycleProduct,
@@ -20,7 +17,11 @@ from apps.home.models import MainBanner
 from apps.events.models import Event
 from apps.gallery.models import GalleryImage
 
-# ── Home ─────────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# HOME — MAIN BANNER
+# ─────────────────────────────────────────────────────────────────────────────
+
 class MainBannerFilter(django_filters.FilterSet):
     is_active = django_filters.BooleanFilter(field_name='is_active')
 
@@ -28,7 +29,10 @@ class MainBannerFilter(django_filters.FilterSet):
         model  = MainBanner
         fields = ['is_active']
 
-# ── Events ───────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# EVENTS
+# ─────────────────────────────────────────────────────────────────────────────
 
 class EventFilter(django_filters.FilterSet):
     is_active      = django_filters.BooleanFilter(field_name='is_active')
@@ -43,13 +47,15 @@ class EventFilter(django_filters.FilterSet):
         fields = ['is_active', 'destination', 'starting_point', 'start_date', 'end_date']
 
     def filter_upcoming(self, queryset, name, value):
-        from django.utils import timezone
         today = timezone.now().date()
         if value:
             return queryset.filter(end_date__gte=today)
         return queryset.filter(end_date__lt=today)
 
-# ── Gallery ──────────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# GALLERY
+# ─────────────────────────────────────────────────────────────────────────────
 
 class GalleryImageFilter(django_filters.FilterSet):
     is_active = django_filters.BooleanFilter(field_name='is_active')
@@ -58,7 +64,10 @@ class GalleryImageFilter(django_filters.FilterSet):
         model  = GalleryImage
         fields = ['is_active']
 
-# ── Categories ───────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# CATEGORIES
+# ─────────────────────────────────────────────────────────────────────────────
 
 class ProductCategoryFilter(django_filters.FilterSet):
     is_active = django_filters.BooleanFilter(field_name='is_active')
@@ -68,9 +77,16 @@ class ProductCategoryFilter(django_filters.FilterSet):
         model  = ProductCategory
         fields = ['is_active', 'name']
 
-# ── Motorcycles ──────────────────────────────────────────────────────────────
+
+# ─────────────────────────────────────────────────────────────────────────────
+# MOTORCYCLES
+# ─────────────────────────────────────────────────────────────────────────────
 
 class MotorcycleProductFilter(django_filters.FilterSet):
+    """
+    ?category=street   → filter by category slug
+    ?is_active=true    → active only
+    """
     category  = django_filters.CharFilter(field_name='category__slug', lookup_expr='exact')
     is_active = django_filters.BooleanFilter(field_name='is_active')
 
