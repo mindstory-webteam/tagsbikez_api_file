@@ -17,13 +17,33 @@ class MotorcycleProduct(models.Model):
     featured_image    = models.ImageField(upload_to='motorcycles/images/')
     short_description = models.CharField(max_length=500)
     description       = models.TextField()
-    engine_cc         = models.CharField(max_length=50, help_text='e.g. 349cc')
-    power             = models.CharField(max_length=50, help_text='e.g. 20.2 bhp')
-    torque            = models.CharField(max_length=50, help_text='e.g. 27 Nm')
-    brochure_file     = models.FileField(
+
+    # ── Specs ──────────────────────────────────────────────────────────────
+    engine_cc = models.CharField(max_length=50, help_text='e.g. 349cc')
+    power     = models.CharField(max_length=50, help_text='e.g. 20.2 bhp')
+    torque    = models.CharField(max_length=50, help_text='e.g. 27 Nm')
+
+    # ── Pricing ────────────────────────────────────────────────────────────
+    emi_starts_at = models.CharField(
+        max_length=100,
+        blank=True,
+        help_text='e.g. ₹3,999/month  — shown as "EMI STARTS @" on listing card',
+    )
+
+    # ── Brochure ───────────────────────────────────────────────────────────
+    brochure_file = models.FileField(
         upload_to='motorcycles/brochures/',
         blank=True, null=True,
         help_text='Upload PDF brochure',
+    )
+
+    # ── Visibility ─────────────────────────────────────────────────────────
+    coming_soon   = models.BooleanField(
+        default=False,
+        help_text=(
+            'ON  → hides full detail page; shows "Coming Soon" badge on listing card.\n'
+            'OFF → full detail page is accessible normally.'
+        ),
     )
     display_order = models.PositiveIntegerField(default=0)
     is_active     = models.BooleanField(default=True)
@@ -31,8 +51,8 @@ class MotorcycleProduct(models.Model):
     updated_at    = models.DateTimeField(auto_now=True)
 
     class Meta:
-        ordering         = ['display_order', 'name']
-        verbose_name     = 'Motorcycle Product'
+        ordering            = ['display_order', 'name']
+        verbose_name        = 'Motorcycle Product'
         verbose_name_plural = 'Motorcycle Products'
 
     def save(self, *args, **kwargs):
@@ -53,8 +73,8 @@ class ProductColor(models.Model):
     display_order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering     = ['display_order']
-        verbose_name = 'Product Color'
+        ordering            = ['display_order']
+        verbose_name        = 'Product Color'
         verbose_name_plural = 'Product Colors'
 
     def __str__(self):
@@ -62,10 +82,15 @@ class ProductColor(models.Model):
 
 
 class ProductTopAbout(models.Model):
-    motorcycle  = models.OneToOneField(MotorcycleProduct, on_delete=models.CASCADE, related_name='top_about')
-    top_image   = models.ImageField(upload_to='motorcycles/top_about/')
-    heading     = models.CharField(max_length=200)
-    description = models.TextField()
+    motorcycle  = models.OneToOneField(
+        MotorcycleProduct, on_delete=models.CASCADE, related_name='top_about',
+    )
+    top_image   = models.ImageField(
+        upload_to='motorcycles/top_about/',
+        help_text='Hero image shown at the top of the product page',
+    )
+    heading     = models.CharField(max_length=200, help_text='e.g. Born to Ride')
+    description = models.TextField(help_text='Paragraph shown below the heading')
 
     class Meta:
         verbose_name        = 'Product Top About Section'
@@ -76,16 +101,21 @@ class ProductTopAbout(models.Model):
 
 
 class ProductFeatureSection(models.Model):
-    motorcycle    = models.ForeignKey(MotorcycleProduct, on_delete=models.CASCADE, related_name='features')
-    image         = models.ImageField(upload_to='motorcycles/features/')
-    title         = models.CharField(max_length=200)
-    description   = models.TextField()
+    motorcycle    = models.ForeignKey(
+        MotorcycleProduct, on_delete=models.CASCADE, related_name='features',
+    )
+    image         = models.ImageField(
+        upload_to='motorcycles/features/',
+        help_text='Feature highlight image',
+    )
+    title         = models.CharField(max_length=200, help_text='e.g. Twin-pod Console')
+    description   = models.TextField(help_text='Feature description paragraph')
     display_order = models.PositiveIntegerField(default=0)
 
     class Meta:
-        ordering     = ['display_order']
-        verbose_name = 'Product Feature Section'
-        verbose_name_plural = 'Product Feature Sections'
+        ordering            = ['display_order']
+        verbose_name        = 'Product Feature Section'
+        verbose_name_plural = 'Product Feature Sections (Bottom)'
 
     def __str__(self):
         return f"{self.motorcycle.name} — {self.title}"

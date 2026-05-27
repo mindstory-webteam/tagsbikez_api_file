@@ -116,7 +116,7 @@ class ProductCategoryDetailSerializer(serializers.ModelSerializer):
 
 
 # ─────────────────────────────────────────────────────────────────────────────
-# MOTORCYCLES — nested serializers
+# MOTORCYCLES
 # ─────────────────────────────────────────────────────────────────────────────
 
 class ProductColorSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
@@ -152,25 +152,17 @@ class ProductFeatureSectionSerializer(AbsoluteURLMixin, serializers.ModelSeriali
         return self._abs(obj.image)
 
 
-# ─── Single full serializer used for BOTH list and detail ────────────────────
-
 class MotorcycleProductSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
     """
-    One serializer for all fields — used on both:
-      GET /api/motorcycles/          (list)
-      GET /api/motorcycles/<slug>/   (detail)
+    Single serializer for both list and detail endpoints.
 
-    All fields included:
-      Core        → id, name, slug, short_description, description
-      Images      → featured_image_url
-      Specs       → engine_cc, power, torque
-      Brochure    → brochure_url
-      Category    → id, name, slug (nested)
-      base_price  → price of lowest display_order color
-      top_about   → hero section (nested)
-      colors      → all color variants (nested)
-      features    → all story sections (nested)
-      Meta        → display_order, is_active, created_at, updated_at
+    coming_soon behaviour (handled by frontend):
+      coming_soon = true  → show "Coming Soon" badge, disable detail navigation
+      coming_soon = false → show full detail link normally
+
+    New fields:
+      emi_starts_at → shown on listing card as "EMI STARTS @"
+      coming_soon   → frontend uses this to show badge / block detail page
     """
     category           = ProductCategoryListSerializer(read_only=True)
     featured_image_url = serializers.SerializerMethodField()
@@ -183,7 +175,7 @@ class MotorcycleProductSerializer(AbsoluteURLMixin, serializers.ModelSerializer)
     class Meta:
         model  = MotorcycleProduct
         fields = [
-            # ── Hero section ──────────────────────────
+            # ── Hero ──────────────────────────────────
             'top_about',
             # ── Core ──────────────────────────────────
             'id',
@@ -192,9 +184,11 @@ class MotorcycleProductSerializer(AbsoluteURLMixin, serializers.ModelSerializer)
             'featured_image_url',
             'short_description',
             'description',
-            # ── Colors (nested, no separate endpoint) ─
+            # ── Colors ────────────────────────────────
             'colors',
             'base_price',
+            # ── Pricing ───────────────────────────────
+            'emi_starts_at',       # ← NEW: "EMI STARTS @"
             # ── Specs ─────────────────────────────────
             'engine_cc',
             'power',
@@ -203,9 +197,10 @@ class MotorcycleProductSerializer(AbsoluteURLMixin, serializers.ModelSerializer)
             'brochure_url',
             # ── Category ──────────────────────────────
             'category',
-            # ── Bottom feature sections ───────────────
+            # ── Bottom features ───────────────────────
             'features',
-            # ── Meta ──────────────────────────────────
+            # ── Visibility ────────────────────────────
+            'coming_soon',         # ← NEW: true = hide detail / show badge
             'display_order',
             'is_active',
             'created_at',
@@ -219,12 +214,11 @@ class MotorcycleProductSerializer(AbsoluteURLMixin, serializers.ModelSerializer)
         return self._abs(obj.brochure_file)
 
     def get_base_price(self, obj):
-        # prefetch_related('colors') is set in the view — no extra DB hit
         first = obj.colors.order_by('display_order').first()
         return first.price if first else None
 
 
-# Keep aliases so views.py import names stay the same
+# Aliases — views.py imports stay unchanged
 MotorcycleProductListSerializer   = MotorcycleProductSerializer
 MotorcycleProductDetailSerializer = MotorcycleProductSerializer
 

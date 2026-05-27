@@ -13,61 +13,134 @@ from .models import (
 
 
 class ProductTopAboutInline(admin.StackedInline):
-    model   = ProductTopAbout
-    extra   = 0
-    max_num = 1
-    fields  = ('top_image', 'heading', 'description')
+    model               = ProductTopAbout
+    extra               = 0
+    max_num             = 1
+    fields              = ('top_image', 'image_preview', 'heading', 'description')
+    readonly_fields     = ('image_preview',)
     verbose_name        = 'Top About Section'
-    verbose_name_plural = 'Top About Section (Image · Heading · Description)'
+    verbose_name_plural = '① TOP ABOUT SECTION  (Image · Heading · Description)'
+
+    @admin.display(description='Current Image')
+    def image_preview(self, obj):
+        if obj.pk and obj.top_image:
+            return format_html(
+                '<img src="{}" style="max-height:120px;border-radius:6px;'
+                'object-fit:cover;border:1px solid #ddd;" />',
+                obj.top_image.url,
+            )
+        return '— upload an image above —'
 
 
 class ProductColorInline(admin.TabularInline):
-    model           = ProductColor
-    extra           = 1
-    fields          = ('display_order', 'name', 'hex', 'color_swatch', 'image', 'price')
-    readonly_fields = ('color_swatch',)
+    model               = ProductColor
+    extra               = 1
+    fields              = ('display_order', 'name', 'hex', 'color_swatch', 'image', 'price')
+    readonly_fields     = ('color_swatch',)
+    verbose_name        = 'Color Variant'
+    verbose_name_plural = '② COLOR VARIANTS  (Name · Hex · Image · Price)'
 
     @admin.display(description='Swatch')
     def color_swatch(self, obj):
         if obj.hex:
             return format_html(
-                '<span style="display:inline-block;width:24px;height:24px;'
+                '<span style="display:inline-block;width:28px;height:28px;'
                 'border-radius:4px;background:{};border:1px solid #ccc;"></span>',
                 obj.hex,
             )
         return '—'
 
 
-class ProductFeatureSectionInline(admin.TabularInline):
+class ProductFeatureSectionInline(admin.StackedInline):
     model               = ProductFeatureSection
     extra               = 1
-    fields              = ('display_order', 'title', 'description', 'image')
+    fields              = ('display_order', 'image', 'image_preview', 'title', 'description')
+    readonly_fields     = ('image_preview',)
     verbose_name        = 'Feature / Story Section'
-    verbose_name_plural = 'Bottom Feature Sections (Image · Title · Description)'
+    verbose_name_plural = '③ BOTTOM FEATURE SECTIONS  (Image · Title · Description)'
+
+    @admin.display(description='Preview')
+    def image_preview(self, obj):
+        if obj.pk and obj.image:
+            return format_html(
+                '<img src="{}" style="max-height:100px;border-radius:6px;'
+                'object-fit:cover;border:1px solid #ddd;" />',
+                obj.image.url,
+            )
+        return '— upload an image above —'
 
 
 @admin.register(MotorcycleProduct)
 class MotorcycleProductAdmin(admin.ModelAdmin):
-    list_display        = ['name', 'category', 'engine_cc', 'power', 'torque', 'color_count', 'display_order', 'is_active']
+    list_display  = [
+        'name', 'category', 'engine_cc',
+        'emi_starts_at', 'color_count',
+        'coming_soon_badge', 'has_top_about', 'feature_count',
+        'display_order', 'is_active',
+    ]
     list_editable       = ['display_order', 'is_active']
-    list_filter         = ['category', 'is_active']
+    list_filter         = ['category', 'is_active', 'coming_soon']
     search_fields       = ['name', 'slug', 'short_description']
     prepopulated_fields = {'slug': ('name',)}
     autocomplete_fields = ['category']
 
     fieldsets = (
-        ('Basic Info',     {'fields': ('category', 'name', 'slug', 'featured_image', 'short_description', 'description')}),
-        ('Specifications', {'fields': ('engine_cc', 'power', 'torque')}),
-        ('Brochure',       {'fields': ('brochure_file',)}),
-        ('Visibility',     {'fields': ('display_order', 'is_active')}),
+        ('Basic Info', {
+            'fields': (
+                'category', 'name', 'slug',
+                'featured_image', 'short_description', 'description',
+            ),
+        }),
+        ('Specifications', {
+            'fields': ('engine_cc', 'power', 'torque'),
+        }),
+        ('Pricing', {
+            'fields': ('emi_starts_at',),
+            'description': 'Shown on listing cards as "EMI STARTS @"',
+        }),
+        ('Brochure', {
+            'fields': ('brochure_file',),
+        }),
+        ('Visibility', {
+            'fields': ('coming_soon', 'display_order', 'is_active'),
+            'description': (
+                'coming_soon ON  → hides detail page, shows "Coming Soon" badge.\n'
+                'coming_soon OFF → full product detail accessible.'
+            ),
+        }),
     )
 
-    inlines = [ProductTopAboutInline, ProductColorInline, ProductFeatureSectionInline]
+    inlines = [
+        ProductTopAboutInline,
+        ProductColorInline,
+        ProductFeatureSectionInline,
+    ]
 
     @admin.display(description='Colors')
     def color_count(self, obj):
         count = obj.colors.count()
         return f"{count} color{'s' if count != 1 else ''}"
+
+    @admin.display(description='Top About', boolean=True)
+    def has_top_about(self, obj):
+        return hasattr(obj, 'top_about') and obj.top_about is not None
+
+    @admin.display(description='Features')
+    def feature_count(self, obj):
+        count = obj.features.count()
+        return f"{count} section{'s' if count != 1 else ''}"
+
+    @admin.display(description='Coming Soon')
+    def coming_soon_badge(self, obj):
+        if obj.coming_soon:
+            return format_html(
+                '<span style="background:#e53e3e;color:#fff;padding:2px 8px;'
+                'border-radius:4px;font-size:11px;font-weight:bold;">COMING SOON</span>'
+            )
+        return format_html(
+            '<span style="background:#38a169;color:#fff;padding:2px 8px;'
+            'border-radius:4px;font-size:11px;">LIVE</span>'
+        )
 
 
 @admin.register(ProductColor)
@@ -82,7 +155,7 @@ class ProductColorAdmin(admin.ModelAdmin):
     def color_swatch(self, obj):
         if obj.hex:
             return format_html(
-                '<span style="display:inline-block;width:24px;height:24px;'
+                '<span style="display:inline-block;width:28px;height:28px;'
                 'border-radius:4px;background:{};border:1px solid #ccc;"></span>',
                 obj.hex,
             )
@@ -91,15 +164,49 @@ class ProductColorAdmin(admin.ModelAdmin):
 
 @admin.register(ProductTopAbout)
 class ProductTopAboutAdmin(admin.ModelAdmin):
-    list_display  = ['motorcycle', 'heading']
-    search_fields = ['motorcycle__name', 'heading']
-    raw_id_fields = ['motorcycle']
+    list_display    = ['motorcycle', 'heading', 'image_preview']
+    search_fields   = ['motorcycle__name', 'heading']
+    raw_id_fields   = ['motorcycle']
+    readonly_fields = ['image_preview']
+
+    fieldsets = (
+        (None, {
+            'fields': ('motorcycle', 'top_image', 'image_preview', 'heading', 'description'),
+        }),
+    )
+
+    @admin.display(description='Image Preview')
+    def image_preview(self, obj):
+        if obj.top_image:
+            return format_html(
+                '<img src="{}" style="max-height:100px;border-radius:6px;'
+                'object-fit:cover;border:1px solid #ddd;" />',
+                obj.top_image.url,
+            )
+        return '—'
 
 
 @admin.register(ProductFeatureSection)
 class ProductFeatureSectionAdmin(admin.ModelAdmin):
-    list_display  = ['motorcycle', 'title', 'display_order']
-    list_editable = ['display_order']
-    list_filter   = ['motorcycle__category']
-    search_fields = ['title', 'motorcycle__name']
-    raw_id_fields = ['motorcycle']
+    list_display    = ['motorcycle', 'title', 'image_preview', 'display_order']
+    list_editable   = ['display_order']
+    list_filter     = ['motorcycle__category']
+    search_fields   = ['title', 'motorcycle__name']
+    raw_id_fields   = ['motorcycle']
+    readonly_fields = ['image_preview']
+
+    fieldsets = (
+        (None, {
+            'fields': ('motorcycle', 'display_order', 'image', 'image_preview', 'title', 'description'),
+        }),
+    )
+
+    @admin.display(description='Image Preview')
+    def image_preview(self, obj):
+        if obj.image:
+            return format_html(
+                '<img src="{}" style="max-height:100px;border-radius:6px;'
+                'object-fit:cover;border:1px solid #ddd;" />',
+                obj.image.url,
+            )
+        return '—'
