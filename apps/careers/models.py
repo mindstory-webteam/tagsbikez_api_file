@@ -1,20 +1,9 @@
 """
 apps/careers/models.py
-
-Models:
-  CareerDepartment  — e.g. "Sales Department", "Service Department"
-  CareerRole        — e.g. "Field Staff", "Technician"
-                      Apply button links to WhatsApp with pre-filled message.
-
-Page layout:
-  [CareerDepartment]         ← SALES DEPARTMENT
-    [CareerRole × N]         ← Field Staff    [APPLY NOW → WhatsApp]
-    [CareerRole × N]         ← Sales Consultant [APPLY NOW → WhatsApp]
-  [CareerDepartment]         ← SERVICE DEPARTMENT
-    [CareerRole × N]         ← Technician     [APPLY NOW → WhatsApp]
 """
 
 from django.db import models
+from urllib.parse import quote
 
 
 class CareerDepartment(models.Model):
@@ -33,20 +22,20 @@ class CareerDepartment(models.Model):
 
 
 class CareerRole(models.Model):
-    department    = models.ForeignKey(
+    department      = models.ForeignKey(
         CareerDepartment,
         on_delete=models.CASCADE,
         related_name='roles',
     )
-    title         = models.CharField(max_length=200, help_text='e.g. Field Staff')
+    title           = models.CharField(max_length=200, help_text='e.g. Field Staff')
     whatsapp_number = models.CharField(
         max_length=20,
-        help_text='WhatsApp number with country code e.g. 919876543210',
+        help_text='WhatsApp number with country code — digits only, no + or spaces. e.g. 919876543210',
     )
     whatsapp_message = models.CharField(
         max_length=500,
         blank=True,
-        help_text='Pre-filled WhatsApp message. Leave blank to auto-generate.',
+        help_text='Pre-filled message. Leave blank to auto-generate from job title.',
     )
     display_order = models.PositiveIntegerField(default=0)
     is_active     = models.BooleanField(default=True)
@@ -59,11 +48,27 @@ class CareerRole(models.Model):
     def __str__(self):
         return f"{self.department.name} — {self.title}"
 
+    def _clean_number(self):
+        """
+        Strips +, spaces, dashes, brackets from the stored number.
+        Ensures wa.me gets pure digits only: 919876543210
+        """
+        import re
+        return re.sub(r'[^\d]', '', self.whatsapp_number)
+
     def get_whatsapp_url(self):
         """
-        Returns wa.me link with pre-filled message.
-        e.g. https://wa.me/919876543210?text=I+am+interested+in+Field+Staff+position
+        Builds a correct wa.me link:
+          https://wa.me/919876543210?text=Hi%2C+I+am+interested+in+Field+Staff
+
+        Common mistakes fixed:
+          • Strips + prefix (causes double-encoding → api.whatsapp.com 404)
+          • Strips spaces / dashes from number
+          • Uses quote(safe='') for clean single-encoding of message
         """
-        from urllib.parse import quote
-        message = self.whatsapp_message or f"Hi, I am interested in the {self.title} position at TagsBikez."
-        return f"https://wa.me/{self.whatsapp_number}?text={quote(message)}"
+        number  = self._clean_number()
+        message = (
+            self.whatsapp_message.strip()
+            or f"Hi, I am interested in the {self.title} position at TagsBikez."
+        )
+        return f"https://wa.me/{number}?text={quote(message, safe='')}"
