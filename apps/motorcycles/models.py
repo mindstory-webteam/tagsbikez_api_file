@@ -12,22 +12,21 @@ class MotorcycleProduct(models.Model):
         on_delete=models.CASCADE,
         related_name='motorcycles',
     )
-    name              = models.CharField(max_length=200)
-    slug              = models.SlugField(max_length=220, unique=True, blank=True)
-    featured_image    = models.ImageField(upload_to='motorcycles/images/')
-    short_description = models.CharField(max_length=500)
-    description       = models.TextField()
+    name           = models.CharField(max_length=200)
+    slug           = models.SlugField(max_length=220, unique=True, blank=True)
+    featured_image = models.ImageField(upload_to='motorcycles/images/')
+    description    = models.TextField()
 
-    # ── Specs ──────────────────────────────────────────────────────────────
-    engine_cc = models.CharField(max_length=50, help_text='e.g. 349cc')
-    power     = models.CharField(max_length=50, help_text='e.g. 20.2 bhp')
-    torque    = models.CharField(max_length=50, help_text='e.g. 27 Nm')
+    # ── Specs (not required) ───────────────────────────────────────────────
+    engine_cc = models.CharField(max_length=50, blank=True, help_text='e.g. 349cc')
+    power     = models.CharField(max_length=50, blank=True, help_text='e.g. 20.2 bhp')
+    torque    = models.CharField(max_length=50, blank=True, help_text='e.g. 27 Nm')
 
     # ── Pricing ────────────────────────────────────────────────────────────
     emi_starts_at = models.CharField(
         max_length=100,
         blank=True,
-        help_text='e.g. ₹3,999/month  — shown as "EMI STARTS @" on listing card',
+        help_text='e.g. ₹3,999/month — shown as "EMI STARTS @" on listing card',
     )
 
     # ── Brochure ───────────────────────────────────────────────────────────

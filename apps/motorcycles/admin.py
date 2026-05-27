@@ -73,14 +73,15 @@ class ProductFeatureSectionInline(admin.StackedInline):
 @admin.register(MotorcycleProduct)
 class MotorcycleProductAdmin(admin.ModelAdmin):
     list_display  = [
-        'name', 'category', 'engine_cc',
+        'name', 'category',
+        'engine_cc', 'power', 'torque',
         'emi_starts_at', 'color_count',
         'coming_soon_badge', 'has_top_about', 'feature_count',
         'display_order', 'is_active',
     ]
     list_editable       = ['display_order', 'is_active']
     list_filter         = ['category', 'is_active', 'coming_soon']
-    search_fields       = ['name', 'slug', 'short_description']
+    search_fields       = ['name', 'slug']
     prepopulated_fields = {'slug': ('name',)}
     autocomplete_fields = ['category']
 
@@ -88,11 +89,13 @@ class MotorcycleProductAdmin(admin.ModelAdmin):
         ('Basic Info', {
             'fields': (
                 'category', 'name', 'slug',
-                'featured_image', 'short_description', 'description',
+                'featured_image', 'description',
             ),
         }),
         ('Specifications', {
+            'description': 'All specification fields are optional.',
             'fields': ('engine_cc', 'power', 'torque'),
+            'classes': ('collapse',),
         }),
         ('Pricing', {
             'fields': ('emi_starts_at',),
@@ -103,10 +106,6 @@ class MotorcycleProductAdmin(admin.ModelAdmin):
         }),
         ('Visibility', {
             'fields': ('coming_soon', 'display_order', 'is_active'),
-            'description': (
-                'coming_soon ON  → hides detail page, shows "Coming Soon" badge.\n'
-                'coming_soon OFF → full product detail accessible.'
-            ),
         }),
     )
 
@@ -130,7 +129,7 @@ class MotorcycleProductAdmin(admin.ModelAdmin):
         count = obj.features.count()
         return f"{count} section{'s' if count != 1 else ''}"
 
-    @admin.display(description='Coming Soon')
+    @admin.display(description='Status')
     def coming_soon_badge(self, obj):
         if obj.coming_soon:
             return format_html(

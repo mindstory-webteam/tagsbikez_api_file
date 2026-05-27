@@ -18,10 +18,6 @@ from apps.gallery.models import GalleryImage
 from apps.careers.models import CareerDepartment, CareerRole
 
 
-# ─────────────────────────────────────────────────────────────────────────────
-# HELPER MIXIN
-# ─────────────────────────────────────────────────────────────────────────────
-
 class AbsoluteURLMixin:
     def _abs(self, field_file):
         if not field_file:
@@ -154,15 +150,9 @@ class ProductFeatureSectionSerializer(AbsoluteURLMixin, serializers.ModelSeriali
 
 class MotorcycleProductSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
     """
-    Single serializer for both list and detail endpoints.
-
-    coming_soon behaviour (handled by frontend):
-      coming_soon = true  → show "Coming Soon" badge, disable detail navigation
-      coming_soon = false → show full detail link normally
-
-    New fields:
-      emi_starts_at → shown on listing card as "EMI STARTS @"
-      coming_soon   → frontend uses this to show badge / block detail page
+    Single serializer for both list and detail.
+    short_description removed.
+    engine_cc / power / torque are optional — return "" if not set.
     """
     category           = ProductCategoryListSerializer(read_only=True)
     featured_image_url = serializers.SerializerMethodField()
@@ -175,32 +165,22 @@ class MotorcycleProductSerializer(AbsoluteURLMixin, serializers.ModelSerializer)
     class Meta:
         model  = MotorcycleProduct
         fields = [
-            # ── Hero ──────────────────────────────────
             'top_about',
-            # ── Core ──────────────────────────────────
             'id',
             'name',
             'slug',
             'featured_image_url',
-            'short_description',
             'description',
-            # ── Colors ────────────────────────────────
             'colors',
             'base_price',
-            # ── Pricing ───────────────────────────────
-            'emi_starts_at',       # ← NEW: "EMI STARTS @"
-            # ── Specs ─────────────────────────────────
+            'emi_starts_at',
             'engine_cc',
             'power',
             'torque',
-            # ── Brochure ──────────────────────────────
             'brochure_url',
-            # ── Category ──────────────────────────────
             'category',
-            # ── Bottom features ───────────────────────
             'features',
-            # ── Visibility ────────────────────────────
-            'coming_soon',         # ← NEW: true = hide detail / show badge
+            'coming_soon',
             'display_order',
             'is_active',
             'created_at',
@@ -218,7 +198,6 @@ class MotorcycleProductSerializer(AbsoluteURLMixin, serializers.ModelSerializer)
         return first.price if first else None
 
 
-# Aliases — views.py imports stay unchanged
 MotorcycleProductListSerializer   = MotorcycleProductSerializer
 MotorcycleProductDetailSerializer = MotorcycleProductSerializer
 
