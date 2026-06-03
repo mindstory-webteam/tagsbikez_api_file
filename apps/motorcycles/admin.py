@@ -4,6 +4,7 @@ apps/motorcycles/admin.py
 
 from django.contrib import admin
 from django.utils.html import format_html
+from django.urls import reverse
 from .models import (
     MotorcycleProduct,
     ProductColor,
@@ -84,6 +85,34 @@ class MotorcycleProductAdmin(admin.ModelAdmin):
     search_fields       = ['name', 'slug']
     prepopulated_fields = {'slug': ('name',)}
     autocomplete_fields = ['category']
+
+    # ── Bulk Import button injected into the changelist ────────────────────
+    def changelist_view(self, request, extra_context=None):
+        extra_context = extra_context or {}
+        extra_context['bulk_import_url'] = '/admin/motorcycles/bulk-import/'
+        extra_context['bulk_import_button'] = format_html(
+            '<a href="{}" style="'
+            'display:inline-block;margin-left:10px;padding:6px 14px;'
+            'background:#2e7d32;color:#fff;border-radius:4px;font-size:13px;'
+            'font-weight:600;text-decoration:none;vertical-align:middle;'
+            'line-height:1.5;">'
+            '📥 Bulk Import (Excel / CSV)'
+            '</a>',
+            '/admin/motorcycles/bulk-import/',
+        )
+        return super().changelist_view(request, extra_context=extra_context)
+
+    def get_urls(self):
+        from django.urls import path as dj_path
+        from .bulk_import import bulk_import_view
+        custom = [
+            dj_path(
+                "bulk-import/",
+                self.admin_site.admin_view(bulk_import_view),
+                name="motorcycles_motorcycleproduct_bulk_import",
+            ),
+        ]
+        return custom + super().get_urls()
 
     fieldsets = (
         ('Basic Info', {
