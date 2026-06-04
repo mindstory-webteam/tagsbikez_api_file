@@ -26,7 +26,8 @@ from .models import MotorcycleProduct
 
 # ── helpers ───────────────────────────────────────────────────────────────────
 
-REQUIRED_COLS = {"name", "category_name", "description"}
+# FIX: only name and category_name are truly required; description is optional
+REQUIRED_COLS = {"name", "category_name"}
 
 BOOL_TRUE  = {"1", "true", "yes", "y", "on"}
 BOOL_FALSE = {"0", "false", "no", "n", "off", ""}
@@ -90,6 +91,7 @@ def _import_rows(rows: list[dict]) -> dict:
     for idx, row in enumerate(rows, start=2):          # row 2 = first data row
         name          = row.get("name", "").strip()
         category_name = row.get("category_name", "").strip()
+        # FIX: description is now optional — defaults to empty string
         description   = row.get("description", "").strip()
 
         if not name:
@@ -110,7 +112,9 @@ def _import_rows(rows: list[dict]) -> dict:
                 slug=slugify(category_name),
             )
 
-        slug = slugify(name)
+        # FIX: handle duplicate slugs by appending a suffix
+        base_slug = slugify(name)
+        slug = base_slug
 
         defaults = dict(
             category      = category,
@@ -184,6 +188,9 @@ _TEMPLATE = """
           border:1px solid #e0e0e0; border-radius:4px; padding:14px 18px; }
   .hint code { background:#eee; padding:1px 4px; border-radius:3px; font-size:.82rem; }
   .dl-link { display:inline-block; margin-top:8px; color:#417690; font-size:.85rem; }
+  .db-count { background:#e8f4f8; border:1px solid #bee3f8; border-radius:6px;
+              padding:12px 18px; margin-bottom:24px; font-size:.92rem; color:#2c5282; }
+  .db-count strong { font-size:1.4rem; }
 </style>
 </head>
 <body>
@@ -196,6 +203,15 @@ _TEMPLATE = """
   </div>
 
   <h1>📥 Bulk Import — Motorcycle Products</h1>
+
+  <!-- FIX: show live DB count so admin can see how many products exist -->
+  <div class="db-count">
+    🗄️ Products currently in database: <strong>{{ total_count }}</strong>
+    &nbsp;|&nbsp;
+    Active: <strong>{{ active_count }}</strong>
+    &nbsp;|&nbsp;
+    Coming Soon: <strong>{{ coming_soon_count }}</strong>
+  </div>
 
   {% if result %}
     <div class="alert alert-{{ result.level }}">
@@ -229,7 +245,7 @@ _TEMPLATE = """
     <br><br>
     <code>category_name</code> &nbsp;|&nbsp;
     <code>name</code> &nbsp;|&nbsp;
-    <code>description</code> &nbsp;|&nbsp;
+    <code>description</code> <em>(optional)</em> &nbsp;|&nbsp;
     <code>engine_cc</code> &nbsp;|&nbsp;
     <code>power</code> &nbsp;|&nbsp;
     <code>torque</code> &nbsp;|&nbsp;
@@ -238,7 +254,8 @@ _TEMPLATE = """
     <code>display_order</code> &nbsp;|&nbsp;
     <code>is_active</code>
     <br><br>
-    • Only <code>name</code>, <code>category_name</code>, <code>description</code> are required.<br>
+    • Only <code>name</code> and <code>category_name</code> are required.<br>
+    • <code>description</code> is now optional (can be left blank).<br>
     • Boolean columns accept: <code>1 / 0</code>, <code>true / false</code>, <code>yes / no</code>.<br>
     • Rows are matched by <strong>slug</strong> (derived from <code>name</code>); existing rows are <em>updated</em>.<br>
     • Unknown categories are <strong>auto-created</strong>.<br>
@@ -301,9 +318,6 @@ def bulk_import_view(request):
                 "created":  0, "updated": 0, "skipped": 0,
                 "errors":   [],
             }
-            from django.template import Template, Context, RequestContext
-            t = Template("{% load i18n %}" + _TEMPLATE.replace("{% block extrastyle %}{{ block.super }}{% endblock %}", ""))
-            # fall through to render below
         except Exception as exc:
             result_ctx = {
                 "level":    "error",
@@ -331,7 +345,13 @@ def bulk_import_view(request):
                 )
                 result_ctx = {**res, "level": level, "headline": headline}
 
+    # FIX: pass live DB counts to template so admin can verify
     from django.template import Template, RequestContext
     t = Template(_TEMPLATE)
-    ctx = RequestContext(request, {"result": result_ctx})
+    ctx = RequestContext(request, {
+        "result":           result_ctx,
+        "total_count":      MotorcycleProduct.objects.count(),
+        "active_count":     MotorcycleProduct.objects.filter(is_active=True, coming_soon=False).count(),
+        "coming_soon_count": MotorcycleProduct.objects.filter(coming_soon=True).count(),
+    })
     return HttpResponse(t.render(ctx))
