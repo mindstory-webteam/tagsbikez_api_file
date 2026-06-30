@@ -14,6 +14,9 @@ from .views import (
     MotorcycleProductListView,
     MotorcycleProductDetailView,
     CareerDepartmentListView,
+    BlogPostListView,
+    PopularBlogPostListView,
+    BlogPostDetailView,
 )
 
 app_name = 'api'
@@ -34,4 +37,8 @@ urlpatterns = [
     path('motorcycles/<slug:slug>/',    MotorcycleProductDetailView.as_view(), name='motorcycle-detail'),
     # Careers
     path('careers/',                    CareerDepartmentListView.as_view(),    name='career-list'),
+    # Blog  (keep 'popular/' BEFORE '<slug>/' so it isn't captured as a slug)
+    path('blog/',                       BlogPostListView.as_view(),            name='blog-list'),
+    path('blog/popular/',               PopularBlogPostListView.as_view(),    name='blog-popular'),
+    path('blog/<slug:slug>/',           BlogPostDetailView.as_view(),         name='blog-detail'),
 ]

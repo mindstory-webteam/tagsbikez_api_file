@@ -56,6 +56,7 @@ INSTALLED_APPS = [
     'apps.motorcycles',
     'apps.api',
     'apps.careers', 
+    'apps.blog',
 ]
 
 
@@ -296,6 +297,7 @@ JAZZMIN_SETTINGS = {
         "about.AboutPage":                         "fas fa-file-alt",
         "about.LeadershipMember":                  "fas fa-user-tie",
         "about.AboutGallery":                      "fas fa-images",
+        "blog.BlogPost":                           "fas fa-newspaper",
     },
     "default_icon_parents": "fas fa-chevron-circle-right",
     "default_icon_children": "fas fa-circle",

@@ -16,6 +16,7 @@ from apps.home.models import MainBanner
 from apps.events.models import Event
 from apps.gallery.models import GalleryImage
 from apps.careers.models import CareerDepartment, CareerRole
+from apps.blog.models import BlogPost
 
 
 class AbsoluteURLMixin:
@@ -223,3 +224,82 @@ class CareerDepartmentSerializer(serializers.ModelSerializer):
     class Meta:
         model  = CareerDepartment
         fields = ['id', 'name', 'icon', 'display_order', 'is_active', 'roles']
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BLOG
+# ─────────────────────────────────────────────────────────────────────────────
+
+class BlogPostNavSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
+    """Tiny payload for the PREVIOUS / NEXT cards on the detail page."""
+    featured_image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = BlogPost
+        fields = ['id', 'title', 'slug', 'featured_image_url']
+
+    def get_featured_image_url(self, obj):
+        return self._abs(obj.featured_image)
+
+
+class BlogPostCardSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
+    """
+    Used for the BLOGS listing grid and the POPULAR sidebar.
+    Lightweight — no body / intro.
+    """
+    featured_image_url = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = BlogPost
+        fields = [
+            'id', 'title', 'slug', 'author', 'excerpt',
+            'featured_image_url', 'published_date',
+            'is_popular', 'display_order',
+        ]
+
+    def get_featured_image_url(self, obj):
+        return self._abs(obj.featured_image)
+
+
+class BlogPostDetailSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
+    """
+    Full payload for the inner page, including the raw HTML `body`
+    and the auto-derived previous / next neighbours.
+    """
+    featured_image_url = serializers.SerializerMethodField()
+    body_image_url     = serializers.SerializerMethodField()
+    read_time_minutes  = serializers.IntegerField(read_only=True)
+    previous_post      = serializers.SerializerMethodField()
+    next_post          = serializers.SerializerMethodField()
+
+    class Meta:
+        model  = BlogPost
+        fields = [
+            'id', 'title', 'slug', 'author', 'published_date',
+            'featured_image_url',
+            'excerpt', 'intro', 'highlight',
+            'body_image_url', 'body_image_caption',
+            'body',                       # ← raw HTML inner-page body
+            'meta_description',
+            'read_time_minutes',
+            'is_popular', 'display_order', 'is_active',
+            'previous_post', 'next_post',
+            'created_at', 'updated_at',
+        ]
+
+    def get_featured_image_url(self, obj):
+        return self._abs(obj.featured_image)
+
+    def get_body_image_url(self, obj):
+        return self._abs(obj.body_image) if obj.body_image else None
+
+    def get_previous_post(self, obj):
+        prev = obj.get_previous_post()
+        if prev:
+            return BlogPostNavSerializer(prev, context=self.context).data
+        return None
+
+    def get_next_post(self, obj):
+        nxt = obj.get_next_post()
+        if nxt:
+            return BlogPostNavSerializer(nxt, context=self.context).data
+        return None

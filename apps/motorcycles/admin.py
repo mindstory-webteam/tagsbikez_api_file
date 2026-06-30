@@ -86,10 +86,6 @@ class MotorcycleProductAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('name',)}
     autocomplete_fields = ['category']
 
-    # ── Show ALL products — no pagination cutoff ───────────────────────────
-    list_per_page       = 250   # show up to 250 per page (raise if you have more)
-    list_max_show_all   = 1000  # "show all" link shows up to 1000
-
     # ── Bulk Import button injected into the changelist ────────────────────
     def changelist_view(self, request, extra_context=None):
         extra_context = extra_context or {}
@@ -182,7 +178,6 @@ class ProductColorAdmin(admin.ModelAdmin):
     list_filter   = ['motorcycle__category']
     search_fields = ['name', 'motorcycle__name']
     raw_id_fields = ['motorcycle']
-    list_per_page = 250
 
     @admin.display(description='Swatch')
     def color_swatch(self, obj):
@@ -201,7 +196,6 @@ class ProductTopAboutAdmin(admin.ModelAdmin):
     search_fields   = ['motorcycle__name', 'heading']
     raw_id_fields   = ['motorcycle']
     readonly_fields = ['image_preview']
-    list_per_page   = 250
 
     fieldsets = (
         (None, {
@@ -228,7 +222,6 @@ class ProductFeatureSectionAdmin(admin.ModelAdmin):
     search_fields   = ['title', 'motorcycle__name']
     raw_id_fields   = ['motorcycle']
     readonly_fields = ['image_preview']
-    list_per_page   = 250
 
     fieldsets = (
         (None, {

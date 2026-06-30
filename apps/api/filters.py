@@ -17,6 +17,7 @@ from apps.home.models import MainBanner
 from apps.events.models import Event
 from apps.gallery.models import GalleryImage
 from apps.careers.models import CareerDepartment, CareerRole
+from apps.blog.models import BlogPost
 
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -127,3 +128,17 @@ class CareerDepartmentFilter(django_filters.FilterSet):
     class Meta:
         model  = CareerDepartment
         fields = ['is_active', 'name']
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BLOG
+# ─────────────────────────────────────────────────────────────────────────────
+
+class BlogPostFilter(django_filters.FilterSet):
+    is_active  = django_filters.BooleanFilter(field_name='is_active')
+    is_popular = django_filters.BooleanFilter(field_name='is_popular')
+    author     = django_filters.CharFilter(field_name='author', lookup_expr='icontains')
+    title      = django_filters.CharFilter(field_name='title',  lookup_expr='icontains')
+
+    class Meta:
+        model  = BlogPost
+        fields = ['is_active', 'is_popular', 'author', 'title']

@@ -19,6 +19,7 @@ from django.utils import timezone
 
 from rest_framework.generics import ListAPIView, RetrieveAPIView
 from rest_framework.permissions import AllowAny
+from rest_framework.filters import SearchFilter, OrderingFilter
 
 from django_filters.rest_framework import DjangoFilterBackend
 
@@ -28,6 +29,7 @@ from apps.gallery.models import GalleryImage
 from apps.categories.models import ProductCategory
 from apps.motorcycles.models import MotorcycleProduct
 from apps.careers.models import CareerDepartment
+from apps.blog.models import BlogPost
 
 from .serializers import (
     MainBannerSerializer,
@@ -38,6 +40,8 @@ from .serializers import (
     MotorcycleProductListSerializer,
     MotorcycleProductDetailSerializer,
     CareerDepartmentSerializer,
+    BlogPostCardSerializer,
+    BlogPostDetailSerializer,
 )
 from .filters import (
     MainBannerFilter,
@@ -46,6 +50,7 @@ from .filters import (
     ProductCategoryFilter,
     MotorcycleProductFilter,
     CareerDepartmentFilter,
+    BlogPostFilter,
 )
 
 
@@ -194,3 +199,65 @@ class CareerDepartmentListView(ListAPIView):
             .prefetch_related('roles')
             .order_by('display_order', 'name')
         )
+
+# ─────────────────────────────────────────────────────────────────────────────
+# BLOG
+# ─────────────────────────────────────────────────────────────────────────────
+
+def _blog_qs():
+    return BlogPost.objects.filter(is_active=True).order_by(
+        '-published_date', 'display_order', '-id'
+    )
+
+
+class BlogPostListView(ListAPIView):
+    """
+    GET /api/blog/
+    Paginated listing for the BLOGS grid.
+
+    Query params:
+      ?is_popular=true   ?author=admin   ?title=hunter
+      ?search=hunter     (matches title / excerpt / body)
+      ?ordering=published_date | -published_date | display_order
+      ?page=1            ?page_size=12
+    """
+    serializer_class   = BlogPostCardSerializer
+    permission_classes = [AllowAny]
+    filter_backends    = [
+        DjangoFilterBackend,
+        SearchFilter,
+        OrderingFilter,
+    ]
+    filterset_class    = BlogPostFilter
+    search_fields      = ['title', 'excerpt', 'body', 'author']
+    ordering_fields    = ['published_date', 'display_order', 'created_at']
+
+    def get_queryset(self):
+        return _blog_qs()
+
+
+class PopularBlogPostListView(ListAPIView):
+    """
+    GET /api/blog/popular/
+    Posts flagged is_popular=True — drives the POPULAR sidebar.
+    Not paginated (small, fixed list).
+    """
+    serializer_class   = BlogPostCardSerializer
+    permission_classes = [AllowAny]
+    pagination_class   = None
+
+    def get_queryset(self):
+        return _blog_qs().filter(is_popular=True)
+
+
+class BlogPostDetailView(RetrieveAPIView):
+    """
+    GET /api/blog/<slug>/
+    Full inner page incl. HTML body + previous/next neighbours.
+    """
+    serializer_class   = BlogPostDetailSerializer
+    permission_classes = [AllowAny]
+    lookup_field       = 'slug'
+
+    def get_queryset(self):
+        return BlogPost.objects.filter(is_active=True)

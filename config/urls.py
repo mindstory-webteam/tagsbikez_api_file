@@ -65,6 +65,8 @@ def api_root(request):
         'categories':  request.build_absolute_uri('/api/categories/'),
         'motorcycles': request.build_absolute_uri('/api/motorcycles/'),
         'career': request.build_absolute_uri('/api/careers/'),
+        'blog':          request.build_absolute_uri('/api/blog/'),
+        'blog_popular':  request.build_absolute_uri('/api/blog/popular/'),
     })
 
 
