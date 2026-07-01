@@ -205,8 +205,11 @@ class CareerDepartmentListView(ListAPIView):
 # ─────────────────────────────────────────────────────────────────────────────
 
 def _blog_qs():
-    return BlogPost.objects.filter(is_active=True).order_by(
-        '-published_date', 'display_order', '-id'
+    return (
+        BlogPost.objects
+        .filter(is_active=True)
+        .prefetch_related('paragraphs')
+        .order_by('-published_date', 'display_order', '-id')
     )
 
 
@@ -229,7 +232,7 @@ class BlogPostListView(ListAPIView):
         OrderingFilter,
     ]
     filterset_class    = BlogPostFilter
-    search_fields      = ['title', 'excerpt', 'body', 'author']
+    search_fields      = ['title', 'excerpt', 'author', 'paragraphs__text']
     ordering_fields    = ['published_date', 'display_order', 'created_at']
 
     def get_queryset(self):
@@ -247,7 +250,7 @@ class PopularBlogPostListView(ListAPIView):
     pagination_class   = None
 
     def get_queryset(self):
-        return _blog_qs().filter(is_popular=True)
+        return _blog_qs().filter(popular=True)
 
 
 class BlogPostDetailView(RetrieveAPIView):
@@ -260,4 +263,4 @@ class BlogPostDetailView(RetrieveAPIView):
     lookup_field       = 'slug'
 
     def get_queryset(self):
-        return BlogPost.objects.filter(is_active=True)
+        return BlogPost.objects.filter(is_active=True).prefetch_related('paragraphs')

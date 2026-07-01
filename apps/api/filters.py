@@ -134,11 +134,11 @@ class CareerDepartmentFilter(django_filters.FilterSet):
 # ─────────────────────────────────────────────────────────────────────────────
 
 class BlogPostFilter(django_filters.FilterSet):
-    is_active  = django_filters.BooleanFilter(field_name='is_active')
-    is_popular = django_filters.BooleanFilter(field_name='is_popular')
-    author     = django_filters.CharFilter(field_name='author', lookup_expr='icontains')
-    title      = django_filters.CharFilter(field_name='title',  lookup_expr='icontains')
+    is_active = django_filters.BooleanFilter(field_name='is_active')
+    popular   = django_filters.BooleanFilter(field_name='popular')
+    author    = django_filters.CharFilter(field_name='author', lookup_expr='icontains')
+    title     = django_filters.CharFilter(field_name='title',  lookup_expr='icontains')
 
     class Meta:
         model  = BlogPost
-        fields = ['is_active', 'is_popular', 'author', 'title']
+        fields = ['is_active', 'popular', 'author', 'title']
