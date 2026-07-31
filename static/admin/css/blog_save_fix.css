@@ -1,0 +1,53 @@
+/* static/admin/css/blog_save_fix.css
+   Keeps the Save / Save and add another / Save and continue editing
+   buttons always visible on the Blog Post change form. */
+
+/* Jazzmin actions panel — pin it to the bottom-right of the screen */
+#jazzy-actions {
+    position: fixed !important;
+    top: auto !important;
+    bottom: 1rem !important;
+    right: 1rem !important;
+    left: auto !important;
+    width: 320px;
+    max-width: calc(100vw - 2rem);
+    max-height: 75vh;
+    overflow-y: auto;
+    z-index: 1040;
+    background-color: #ffffff;
+    border: 1px solid #dddddd;
+    border-radius: 0.5rem;
+    box-shadow: 0 6px 22px rgba(0, 0, 0, 0.20);
+    padding: 0.75rem;
+    margin: 0 !important;
+}
+
+#jazzy-actions .card,
+#jazzy-actions .card-body {
+    margin: 0;
+    box-shadow: none;
+    border: none;
+}
+
+#jazzy-actions .btn,
+#jazzy-actions input[type="submit"] {
+    width: 100%;
+    margin-bottom: 0.5rem;
+}
+
+/* Keep the bottom of long forms reachable above the floating panel */
+body.change-form #content,
+body.change-form .content-wrapper,
+.app-content {
+    padding-bottom: 180px !important;
+}
+
+/* Fallback: classic Django submit row, if the theme renders it instead */
+.submit-row {
+    position: sticky;
+    bottom: 0;
+    z-index: 1030;
+    background-color: #f8f8f8 !important;
+    border-top: 1px solid #dddddd !important;
+    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.10);
+}

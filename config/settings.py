@@ -313,6 +313,9 @@ JAZZMIN_SETTINGS = {
 
     # ── Change View ───────────────────────────
     "changeform_format": "horizontal_tabs",
+
+    # ── Custom CSS ─────────────────────────────
+    "custom_css": "admin/css/tagsbikez_admin.css",
 }
 
 # JAZZMIN_UI_TWEAKS = {

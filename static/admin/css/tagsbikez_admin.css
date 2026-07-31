@@ -1,0 +1,33 @@
+/* ============================================================================
+   FIX: Save / Save-and-continue / Save-and-add-another buttons disappearing
+   on change forms (e.g. Blog Posts -> Add Blog Post).
+
+   Root cause: Jazzmin renders the action buttons inside a bare <div
+   id="jazzy-actions"> with `position: sticky`, no card/box wrapper, and no
+   background. In some browser/layout combinations that sticky div collapses
+   or renders outside the visible area, making the buttons appear to be
+   missing entirely (an empty grey column, as seen in the bug report).
+
+   Fix: give it a real box (card look) and force static positioning so it
+   always renders in normal document flow, in full view, every time.
+   ========================================================================== */
+#jazzy-actions {
+    position: static !important;
+    top: auto !important;
+    background: #fff;
+    border: 1px solid #dee2e6;
+    border-radius: .375rem;
+    padding: 1rem;
+    margin-bottom: 1rem;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, .08);
+    min-height: 1px; /* prevents zero-height collapse */
+}
+
+#jazzy-actions .d-flex {
+    flex-direction: column;
+}
+
+#jazzy-actions .d-flex .btn,
+#jazzy-actions .d-flex input[type="submit"] {
+    width: 100%;
+}

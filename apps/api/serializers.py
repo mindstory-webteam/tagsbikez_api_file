@@ -249,13 +249,14 @@ class BlogPostCardSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
     """
     date  = serializers.SerializerMethodField()
     image = serializers.SerializerMethodField()
+    seo   = serializers.SerializerMethodField()
 
     class Meta:
         model  = BlogPost
         fields = [
             'id', 'slug', 'title', 'excerpt',
             'author', 'date', 'popular', 'image',
-            'display_order',
+            'display_order', 'seo',
         ]
 
     def get_date(self, obj):
@@ -265,18 +266,30 @@ class BlogPostCardSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
     def get_image(self, obj):
         return self._abs(obj.image)
 
+    def get_seo(self, obj):
+        return {
+            'title':          obj.seo_title,
+            'description':    obj.seo_description,
+            'keywords':       obj.meta_keywords,
+            'image':          self._abs(obj.seo_image),
+            'canonical_url':  obj.canonical_url or None,
+            'noindex':        obj.noindex,
+        }
+
 
 class BlogPostDetailSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
     """
     Inner page. Same shape as blogsData items:
       slug, title, excerpt, content[], author, date, popular, image
-    Plus previous_post / next_post for the PREVIOUS-NEXT cards.
+    Plus previous_post / next_post for the PREVIOUS-NEXT cards,
+    and a `seo` block for <title> / meta tags / social share cards.
     """
     date          = serializers.SerializerMethodField()
     image         = serializers.SerializerMethodField()
     content       = serializers.SerializerMethodField()
     previous_post = serializers.SerializerMethodField()
     next_post     = serializers.SerializerMethodField()
+    seo           = serializers.SerializerMethodField()
 
     class Meta:
         model  = BlogPost
@@ -287,6 +300,7 @@ class BlogPostDetailSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
             'display_order', 'is_active',
             'previous_post', 'next_post',
             'created_at', 'updated_at',
+            'seo',
         ]
 
     def get_date(self, obj):
@@ -305,3 +319,13 @@ class BlogPostDetailSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
     def get_next_post(self, obj):
         nxt = obj.get_next_post()
         return BlogPostNavSerializer(nxt, context=self.context).data if nxt else None
+
+    def get_seo(self, obj):
+        return {
+            'title':          obj.seo_title,
+            'description':    obj.seo_description,
+            'keywords':       obj.meta_keywords,
+            'image':          self._abs(obj.seo_image),
+            'canonical_url':  obj.canonical_url or None,
+            'noindex':        obj.noindex,
+        }

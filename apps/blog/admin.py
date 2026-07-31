@@ -27,7 +27,7 @@ class BlogPostAdmin(admin.ModelAdmin):
     date_hierarchy      = 'published_date'
     ordering            = ['-published_date', 'display_order']
     prepopulated_fields = {'slug': ('title',)}
-    readonly_fields     = ['thumb_large', 'created_at', 'updated_at']
+    readonly_fields     = ['thumb_large', 'og_image_preview', 'created_at', 'updated_at']
     inlines             = [BlogParagraphInline]
 
     fieldsets = (
@@ -37,6 +37,16 @@ class BlogPostAdmin(admin.ModelAdmin):
         ('Card / Sidebar', {
             'fields': ('image', 'thumb_large', 'excerpt', 'popular'),
             'description': 'Shown on the BLOGS listing cards and the POPULAR sidebar.',
+        }),
+        ('SEO', {
+            'fields': (
+                'meta_title', 'meta_description', 'meta_keywords',
+                'og_image', 'og_image_preview',
+                'canonical_url', 'noindex',
+            ),
+            'description': 'Controls how this post appears in Google search results and '
+                            'when shared on social media. Leave blank to fall back to the '
+                            'title / excerpt / main image above.',
         }),
         ('Visibility', {
             'fields': ('display_order', 'is_active', 'created_at', 'updated_at'),
@@ -65,3 +75,12 @@ class BlogPostAdmin(admin.ModelAdmin):
     @admin.display(description='Paras')
     def para_count(self, obj):
         return obj.paragraphs.count()
+
+    @admin.display(description='Social share preview')
+    def og_image_preview(self, obj):
+        if obj.og_image:
+            return format_html(
+                '<img src="{}" style="max-width:320px;border-radius:8px;" />',
+                obj.og_image.url,
+            )
+        return 'No custom social image set — the main post image above will be used instead.'

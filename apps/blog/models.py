@@ -55,6 +55,40 @@ class BlogPost(models.Model):
     created_at     = models.DateTimeField(auto_now_add=True)
     updated_at     = models.DateTimeField(auto_now=True)
 
+    # -- SEO ------------------------------------------------------------------
+    meta_title = models.CharField(
+        max_length=70,
+        blank=True,
+        help_text='Browser tab / Google title. Falls back to the post title if left blank. '
+                   'Keep under ~60 characters.',
+    )
+    meta_description = models.CharField(
+        max_length=160,
+        blank=True,
+        help_text='Google search snippet. Falls back to the excerpt if left blank. '
+                   'Keep under ~155 characters.',
+    )
+    meta_keywords = models.CharField(
+        max_length=255,
+        blank=True,
+        help_text='Optional, comma separated (e.g. "yamaha fz, motorcycle review").',
+    )
+    og_image = models.ImageField(
+        upload_to='blog/og_images/',
+        blank=True,
+        null=True,
+        help_text='Image used when the post is shared on social media (Facebook/X/WhatsApp). '
+                   'Falls back to the main post image if left blank. Recommended 1200x630px.',
+    )
+    canonical_url = models.URLField(
+        blank=True,
+        help_text='Only set this if this content is duplicated from / syndicated to another URL.',
+    )
+    noindex = models.BooleanField(
+        default=False,
+        help_text='ON -> tells search engines NOT to index this post (adds a "noindex" meta tag).',
+    )
+
     class Meta:
         ordering            = ['-published_date', 'display_order', '-id']
         verbose_name        = 'Blog Post'
@@ -78,6 +112,24 @@ class BlogPost(models.Model):
                 n += 1
             self.slug = slug
         super().save(*args, **kwargs)
+
+    # -- SEO helpers ------------------------------------------------------------
+    @property
+    def seo_title(self):
+        """Title to put in <title> / og:title - falls back to the post title."""
+        return self.meta_title or self.title
+
+    @property
+    def seo_description(self):
+        """Description to put in meta description / og:description - falls back to excerpt."""
+        return self.meta_description or self.excerpt
+
+    @property
+    def seo_image(self):
+        """Image to use for og:image / twitter:image - falls back to the main post image."""
+        if self.og_image:
+            return self.og_image
+        return self.image
 
     # -- Helpers for the API --------------------------------------------------
     @property
