@@ -1,7 +1,8 @@
 # TagsBikez — Blog Module (matches `blogsData`)
 
-The `apps.blog` app now mirrors your front-end `blogsData` shape. **No HTML body.**
-Each post has a `content` array of plain-text paragraphs, plus
+The `apps.blog` app now mirrors your front-end `blogsData` shape.
+Each post has a `content` array of paragraphs (**safe HTML strings** — they can
+contain hyperlinks, bold, italic, lists, headings), plus
 `slug, title, excerpt, author, date, popular, image`.
 
 ## Models
@@ -53,8 +54,30 @@ In admin: open a Blog Post and add paragraphs in the **Content Paragraphs** inli
 }
 ```
 
-The detail shape is a drop-in for your `getPostBySlug(slug)` object — just render
-`post.content.map(p => <p>{p}</p>)` (no `dangerouslySetInnerHTML` needed).
+The detail shape is a drop-in for your `getPostBySlug(slug)` object.
+
+### Rendering paragraphs (HTML + hyperlinks)
+Paragraphs now contain HTML, so render them as HTML (otherwise the tags show as text):
+```jsx
+{post.content.map((html, i) => (
+  <div key={i} className="blog-paragraph" dangerouslySetInnerHTML={{ __html: html }} />
+))}
+```
+Use a `<div>` (not `<p>`), because a paragraph may contain its own `<p>`, `<ul>` or `<h3>`.
+This is safe: the server strips everything except
+`a, b, strong, i, em, u, s, p, br, ul, ol, li, h2, h3, h4, blockquote`,
+removes all attributes except a link's `href / target / title`, blocks
+`javascript:` links and adds `rel="noopener noreferrer"` to new-tab links.
+
+## Paragraph editor (admin)
+Blog Posts → **Content Paragraphs** → each Text box has a toolbar:
+Bold · Italic · Underline · Strike · H2 · H3 · Normal · Bullet / Numbered list ·
+Quote · **Link** (Ctrl+K: URL, link text, "Open in new tab") · Remove link ·
+Clear formatting · Undo / Redo · **</> HTML** (view / type raw HTML tags).
+Pasting from Word / Google Docs keeps links and bold/italic, drops other styling.
+Files: `apps/blog/html_sanitizer.py`, `apps/blog/admin.py`,
+`static/admin/js/blog_richtext.js`, `static/admin/css/blog_richtext.css`,
+migration `0005_paragraph_rich_text`.
 
 ## Front-end swap
 Replace the static import with a fetch:

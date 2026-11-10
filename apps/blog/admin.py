@@ -2,13 +2,40 @@
 apps/blog/admin.py
 """
 
+from django import forms
 from django.contrib import admin
 from django.utils.html import format_html
 from .models import BlogPost, BlogParagraph
 
 
+class RichTextWidget(forms.Textarea):
+    """
+    Textarea that `blog_richtext.js` upgrades into a small editor:
+    Bold / Italic / Underline / Heading / Lists / Hyperlink / Unlink /
+    Clear formatting / "</> HTML" source view. The value saved is HTML.
+    """
+
+    def __init__(self, attrs=None):
+        base = {'class': 'tb-richtext', 'rows': 8}
+        if attrs:
+            base.update(attrs)
+        super().__init__(base)
+
+    class Media:
+        css = {'all': ('admin/css/blog_richtext.css',)}
+        js  = ('admin/js/blog_richtext.js',)
+
+
+class BlogParagraphForm(forms.ModelForm):
+    class Meta:
+        model   = BlogParagraph
+        fields  = ('display_order', 'text')
+        widgets = {'text': RichTextWidget()}
+
+
 class BlogParagraphInline(admin.TabularInline):
     model  = BlogParagraph
+    form   = BlogParagraphForm
     extra  = 1
     fields = ('display_order', 'text')
     ordering = ('display_order', 'id')

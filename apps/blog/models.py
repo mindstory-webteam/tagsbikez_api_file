@@ -5,7 +5,8 @@ Mirrors the front-end `blogsData` shape exactly:
 
   {
     slug, title, excerpt,
-    content: [ "para 1", "para 2", ... ],   <- plain-text paragraphs (NO html)
+    content: [ "para 1", "para 2", ... ],   <- paragraphs as safe HTML strings
+                                              (links, bold, italic, lists ...)
     author, date, popular, image
   }
 
@@ -18,6 +19,9 @@ Models
 from django.db import models
 from django.utils.text import slugify
 from django.utils import timezone
+from django.utils.html import strip_tags
+
+from .html_sanitizer import sanitize_html
 
 
 class BlogPost(models.Model):
@@ -134,9 +138,11 @@ class BlogPost(models.Model):
     # -- Helpers for the API --------------------------------------------------
     @property
     def content_list(self):
-        """The paragraphs as a plain list of strings -> the `content` array."""
-        return list(self.paragraphs.order_by('display_order', 'id')
-                                    .values_list('text', flat=True))
+        """The paragraphs as a list of safe HTML strings -> the `content` array."""
+        texts = (self.paragraphs.order_by('display_order', 'id')
+                                .values_list('text', flat=True))
+        # Sanitised again on output so older rows are always safe to render.
+        return [html for html in (sanitize_html(t) for t in texts) if html]
 
     def _siblings(self):
         return BlogPost.objects.filter(is_active=True).order_by(
@@ -166,7 +172,11 @@ class BlogParagraph(models.Model):
         on_delete=models.CASCADE,
         related_name='paragraphs',
     )
-    text          = models.TextField(help_text='One paragraph of the article (plain text).')
+    text          = models.TextField(
+        help_text='One paragraph of the article. Use the toolbar for bold, italic, '
+                  'lists and hyperlinks, or click "</> HTML" to type HTML tags directly. '
+                  'Allowed tags: a, b/strong, i/em, u, s, p, br, ul, ol, li, h2, h3, h4, blockquote.',
+    )
     display_order = models.PositiveIntegerField(default=0)
 
     class Meta:
@@ -174,6 +184,11 @@ class BlogParagraph(models.Model):
         verbose_name        = 'Paragraph'
         verbose_name_plural = 'Content Paragraphs'
 
+    def save(self, *args, **kwargs):
+        # Strip unsafe tags/attributes (scripts, onclick, javascript: links ...).
+        self.text = sanitize_html(self.text)
+        super().save(*args, **kwargs)
+
     def __str__(self):
-        preview = (self.text or '')[:50]
+        preview = strip_tags(self.text or '')[:50]
         return f'{self.post.title} - para {self.display_order}: {preview}'

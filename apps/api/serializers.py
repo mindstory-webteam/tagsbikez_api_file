@@ -295,7 +295,7 @@ class BlogPostDetailSerializer(AbsoluteURLMixin, serializers.ModelSerializer):
         model  = BlogPost
         fields = [
             'id', 'slug', 'title', 'excerpt',
-            'content',                 # <- list of plain paragraphs
+            'content',                 # <- list of paragraphs (safe HTML strings)
             'author', 'date', 'popular', 'image',
             'display_order', 'is_active',
             'previous_post', 'next_post',
